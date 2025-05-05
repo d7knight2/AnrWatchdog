@@ -10,6 +10,9 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.7.3")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.7.3")
 }
 
 kotlin {

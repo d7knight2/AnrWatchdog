@@ -18,40 +18,47 @@ class DependencyAnalyzerV3UnitTest {
     }
 
     @Test
-    fun testDeepBlockingChain() = runBlocking {
-        val jobs = (1..10).map { index ->
-            launch(Dispatchers.Default + CoroutineName("Job-$index")) {
-                DependencyAnalyzerV3.logEvent("Started Job-$index")
-                delay(50)
-                DependencyAnalyzerV3.logEvent("Finished Job-$index")
-            }
-        }
-        jobs.forEach { it.join() }
+    fun shouldInvokeAllRepositoriesAndVerifyStackTraces() = runBlocking {
+        val outputStream = ByteArrayOutputStream()
+        val printStream = PrintStream(outputStream)
+        val originalOut = System.out
+        System.setOut(printStream)
 
-        println("Assertions and creation stack trace:")
-        println("Jobs created: ${jobs.size}")
-        jobs.forEachIndexed { index, job ->
-            println("Job-$index creation stack trace:")
-
-            // Redirect standard output to capture the coroutine dump
-            val outputStream = ByteArrayOutputStream()
-            val printStream = PrintStream(outputStream)
-            val originalOut = System.out
-            System.setOut(printStream)
-
-            DebugProbes.dumpCoroutines() // Capture detailed coroutine information
-
-            // Restore the original standard output
-            System.setOut(originalOut)
-
-            val stackTrace = outputStream.toString()
-            val expectedMethod = "testDeepBlockingChain"
-            val expectedClass = "DependencyAnalyzerV3UnitTest"
-            assertTrue(stackTrace.contains(expectedMethod), "Expected stack trace to contain method: $expectedMethod")
-            assertTrue(stackTrace.contains(expectedClass), "Expected stack trace to contain class: $expectedClass")
+        val mainJob = launch(Dispatchers.Default + CoroutineName("Main")) {
+            println("Main coroutine started")
+            BlockingRxJavaInteroptRepository.performBlockingOperation(1)
         }
 
-        DebugProbes.dumpCoroutines() // Print detailed coroutine information for all active coroutines
-        DependencyAnalyzerV3.dump()
+        val okhttpJob = launch(Dispatchers.Default + CoroutineName("OkHttp")) {
+            println("OkHttp coroutine started")
+            com.d7knight.anrwatchdog.okhttp.FakeOkHttpRepository.performBlockingOperation(2)
+        }
+
+        val glideJob = launch(Dispatchers.Default + CoroutineName("Glide")) {
+            println("Glide coroutine started")
+            com.d7knight.anrwatchdog.glide.FakeGlideRepository.performBlockingOperation(3)
+        }
+
+        val experimentJob = launch(Dispatchers.Default + CoroutineName("Experiment")) {
+            println("Experiment coroutine started")
+            com.d7knight.anrwatchdog.experiment.ExperimentCheckRepository.performNonBlockingOperation(4)
+        }
+
+        listOf(mainJob, okhttpJob, glideJob, experimentJob).forEach { it.join() }
+
+        System.setOut(originalOut)
+
+        val output = outputStream.toString()
+
+        val expectedTraces = listOf(
+            "BlockingRxJavaInteroptRepository",
+            "FakeOkHttpRepository",
+            "FakeGlideRepository",
+            "ExperimentCheckRepository"
+        )
+
+        expectedTraces.forEach { trace ->
+            assertTrue(output.contains(trace), "Expected output to contain trace: $trace")
+        }
     }
 }
