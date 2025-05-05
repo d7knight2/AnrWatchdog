@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="FailingTest" tests="1" skipped="0" failures="1" errors="0" timestamp="2025-05-05T02:59:07.423Z" hostname="codespaces-4829f7" time="0.023">
+<testsuite name="FailingTest" tests="1" skipped="0" failures="1" errors="0" timestamp="2025-05-05T03:44:38.856Z" hostname="codespaces-4829f7" time="0.023">
   <properties/>
   <testcase name="testShouldFail" classname="FailingTest" time="0.023">
     <failure message="java.lang.AssertionError: This test is designed to fail." type="java.lang.AssertionError">java.lang.AssertionError: This test is designed to fail.

@@ -41,7 +41,7 @@
 </td>
 <td>
 <div class="infoBox" id="duration">
-<div class="counter">0.221s</div>
+<div class="counter">0.682s</div>
 <p>duration</p>
 </div>
 </td>
@@ -79,7 +79,7 @@
 </thead>
 <tr>
 <td class="success">testDeepBlockingChain</td>
-<td class="success">0.221s</td>
+<td class="success">0.682s</td>
 <td class="success">passed</td>
 </tr>
 </table>
@@ -87,27 +87,98 @@
 <div class="tab">
 <h2>Standard output</h2>
 <span class="code">
-<pre>----- Dependency Analyzer Dump Start -----
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
-[${Thread.currentThread().name}] $event
+<pre>Assertions and creation stack trace:
+Jobs created: 10
+Job-0 creation stack trace:
+Job-1 creation stack trace:
+Job-2 creation stack trace:
+Job-3 creation stack trace:
+Job-4 creation stack trace:
+Job-5 creation stack trace:
+Job-6 creation stack trace:
+Job-7 creation stack trace:
+Job-8 creation stack trace:
+Job-9 creation stack trace:
+Coroutines dump 2025/05/05 03:44:39
+
+Coroutine &quot;coroutine#1&quot;:BlockingCoroutine{Active}@798162bc, state: RUNNING
+	at java.lang.Thread.getStackTrace(Thread.java:1564)
+	at kotlinx.coroutines.debug.internal.DebugProbesImpl.enhanceStackTraceWithThreadDumpImpl(DebugProbesImpl.kt:336)
+	at kotlinx.coroutines.debug.internal.DebugProbesImpl.dumpCoroutinesSynchronized(DebugProbesImpl.kt:291)
+	at kotlinx.coroutines.debug.internal.DebugProbesImpl.dumpCoroutines(DebugProbesImpl.kt:263)
+	at kotlinx.coroutines.debug.DebugProbes.dumpCoroutines(DebugProbes.kt:172)
+	at kotlinx.coroutines.debug.DebugProbes.dumpCoroutines$default(DebugProbes.kt:172)
+	at com.d7knight.anrwatchdog.DependencyAnalyzerV3UnitTest$testDeepBlockingChain$1.invokeSuspend(DependencyAnalyzerV3UnitTest.kt:54)
+	at _COROUTINE._CREATION._(CoroutineDebugging.kt:34)
+	at kotlin.coroutines.intrinsics.IntrinsicsKt__IntrinsicsJvmKt.createCoroutineUnintercepted(IntrinsicsJvm.kt:161)
+	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable(Cancellable.kt:30)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+	at com.d7knight.anrwatchdog.DependencyAnalyzerV3UnitTest.testDeepBlockingChain(DependencyAnalyzerV3UnitTest.kt:21)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.runTestClass(JUnitTestClassExecutor.java:112)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:58)
+	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:40)
+	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestClassProcessor.processTestClass(AbstractJUnitTestClassProcessor.java:54)
+	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.processTestClass(SuiteTestClassProcessor.java:53)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)
+	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)
+	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:92)
+	at com.sun.proxy.$Proxy4.processTestClass(Unknown Source)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:183)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:132)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:121)
+	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:71)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)----- Dependency Analyzer Dump Start -----
+[DefaultDispatcher-worker-1 @Job-1#2] Started Job-1
+[DefaultDispatcher-worker-2 @Job-2#3] Started Job-2
+[DefaultDispatcher-worker-2 @Job-3#4] Started Job-3
+[DefaultDispatcher-worker-2 @Job-4#5] Started Job-4
+[DefaultDispatcher-worker-2 @Job-5#6] Started Job-5
+[DefaultDispatcher-worker-2 @Job-6#7] Started Job-6
+[DefaultDispatcher-worker-1 @Job-7#8] Started Job-7
+[DefaultDispatcher-worker-1 @Job-8#9] Started Job-8
+[DefaultDispatcher-worker-1 @Job-9#10] Started Job-9
+[DefaultDispatcher-worker-1 @Job-10#11] Started Job-10
+[DefaultDispatcher-worker-2 @Job-1#2] Finished Job-1
+[DefaultDispatcher-worker-2 @Job-2#3] Finished Job-2
+[DefaultDispatcher-worker-2 @Job-3#4] Finished Job-3
+[DefaultDispatcher-worker-1 @Job-4#5] Finished Job-4
+[DefaultDispatcher-worker-2 @Job-5#6] Finished Job-5
+[DefaultDispatcher-worker-2 @Job-6#7] Finished Job-6
+[DefaultDispatcher-worker-2 @Job-7#8] Finished Job-7
+[DefaultDispatcher-worker-2 @Job-8#9] Finished Job-8
+[DefaultDispatcher-worker-2 @Job-9#10] Finished Job-9
+[DefaultDispatcher-worker-2 @Job-10#11] Finished Job-10
 ----- Dependency Analyzer Dump End -----
 </pre>
 </span>
@@ -120,7 +191,7 @@
 <input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
 </label>
 </div>Generated by 
-<a href="https://www.gradle.org">Gradle 8.13</a> at May 5, 2025, 2:59:07 AM</p>
+<a href="https://www.gradle.org">Gradle 8.13</a> at May 5, 2025, 3:44:39 AM</p>
 </div>
 </div>
 </body>

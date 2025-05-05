@@ -1,22 +1,93 @@
-+----- Dependency Analyzer Dump Start -----
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
-([${Thread.currentThread().name}] $event
+%Assertions and creation stack trace:
+Jobs created: 10
+Job-0 creation stack trace:
+Job-1 creation stack trace:
+Job-2 creation stack trace:
+Job-3 creation stack trace:
+Job-4 creation stack trace:
+Job-5 creation stack trace:
+Job-6 creation stack trace:
+Job-7 creation stack trace:
+Job-8 creation stack trace:
+Job-9 creation stack trace:
+$Coroutines dump 2025/05/05 03:44:39
+
+KCoroutine "coroutine#1":BlockingCoroutine{Active}@798162bc, state: RUNNING
+5	at java.lang.Thread.getStackTrace(Thread.java:1564)
+r	at kotlinx.coroutines.debug.internal.DebugProbesImpl.enhanceStackTraceWithThreadDumpImpl(DebugProbesImpl.kt:336)
+i	at kotlinx.coroutines.debug.internal.DebugProbesImpl.dumpCoroutinesSynchronized(DebugProbesImpl.kt:291)
+]	at kotlinx.coroutines.debug.internal.DebugProbesImpl.dumpCoroutines(DebugProbesImpl.kt:263)
+L	at kotlinx.coroutines.debug.DebugProbes.dumpCoroutines(DebugProbes.kt:172)
+T	at kotlinx.coroutines.debug.DebugProbes.dumpCoroutines$default(DebugProbes.kt:172)
+Ñ	at com.d7knight.anrwatchdog.DependencyAnalyzerV3UnitTest$testDeepBlockingChain$1.invokeSuspend(DependencyAnalyzerV3UnitTest.kt:54)
+5	at _COROUTINE._CREATION._(CoroutineDebugging.kt:34)
+r	at kotlin.coroutines.intrinsics.IntrinsicsKt__IntrinsicsJvmKt.createCoroutineUnintercepted(IntrinsicsJvm.kt:161)
+]	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable(Cancellable.kt:30)
+R	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:38)
+F	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+t	at com.d7knight.anrwatchdog.DependencyAnalyzerV3UnitTest.testDeepBlockingChain(DependencyAnalyzerV3UnitTest.kt:21)
+@	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+R	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+Z	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+5	at java.lang.reflect.Method.invoke(Method.java:498)
+Y	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+X	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+W	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+V	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+R	at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
+E	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+Y	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+B	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+W	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+V	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+@	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+D	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+F	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+D	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+E	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+E	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+>	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+u	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.runTestClass(JUnitTestClassExecutor.java:112)
+o	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:58)
+o	at org.gradle.api.internal.tasks.testing.junit.JUnitTestClassExecutor.execute(JUnitTestClassExecutor.java:40)
+ä	at org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestClassProcessor.processTestClass(AbstractJUnitTestClassProcessor.java:54)
+t	at org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.processTestClass(SuiteTestClassProcessor.java:53)
+@	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+R	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+Z	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+5	at java.lang.reflect.Method.invoke(Method.java:498)
+Y	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)
+Y	at org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)
+i	at org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)
+x	at org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:92)
+;	at com.sun.proxy.$Proxy4.processTestClass(Unknown Source)
+W	at org.gradle.api.internal.tasks.testing.worker.TestWorker$2.run(TestWorker.java:183)
+n	at org.gradle.api.internal.tasks.testing.worker.TestWorker.executeAndMaintainThreadName(TestWorker.java:132)
+Y	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:103)
+X	at org.gradle.api.internal.tasks.testing.worker.TestWorker.execute(TestWorker.java:63)
+j	at org.gradle.process.internal.worker.child.ActionExecutionWorker.execute(ActionExecutionWorker.java:56)
+Ç	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:121)
+Å	at org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker.call(SystemApplicationClassLoaderWorker.java:71)
+]	at worker.org.gradle.process.internal.worker.GradleWorkerMain.run(GradleWorkerMain.java:69)
+à	at worker.org.gradle.process.internal.worker.GradleWorkerMain.main(GradleWorkerMain.java:74)----- Dependency Analyzer Dump Start -----
+4[DefaultDispatcher-worker-1 @Job-1#2] Started Job-1
+4[DefaultDispatcher-worker-2 @Job-2#3] Started Job-2
+4[DefaultDispatcher-worker-2 @Job-3#4] Started Job-3
+4[DefaultDispatcher-worker-2 @Job-4#5] Started Job-4
+4[DefaultDispatcher-worker-2 @Job-5#6] Started Job-5
+4[DefaultDispatcher-worker-2 @Job-6#7] Started Job-6
+4[DefaultDispatcher-worker-1 @Job-7#8] Started Job-7
+4[DefaultDispatcher-worker-1 @Job-8#9] Started Job-8
+5[DefaultDispatcher-worker-1 @Job-9#10] Started Job-9
+7[DefaultDispatcher-worker-1 @Job-10#11] Started Job-10
+5[DefaultDispatcher-worker-2 @Job-1#2] Finished Job-1
+5[DefaultDispatcher-worker-2 @Job-2#3] Finished Job-2
+5[DefaultDispatcher-worker-2 @Job-3#4] Finished Job-3
+5[DefaultDispatcher-worker-1 @Job-4#5] Finished Job-4
+5[DefaultDispatcher-worker-2 @Job-5#6] Finished Job-5
+5[DefaultDispatcher-worker-2 @Job-6#7] Finished Job-6
+5[DefaultDispatcher-worker-2 @Job-7#8] Finished Job-7
+5[DefaultDispatcher-worker-2 @Job-8#9] Finished Job-8
+6[DefaultDispatcher-worker-2 @Job-9#10] Finished Job-9
+8[DefaultDispatcher-worker-2 @Job-10#11] Finished Job-10
 )----- Dependency Analyzer Dump End -----

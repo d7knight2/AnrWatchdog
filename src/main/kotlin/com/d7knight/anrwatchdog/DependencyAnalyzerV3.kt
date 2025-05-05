@@ -8,7 +8,7 @@ object DependencyAnalyzerV3 {
     private val dependencies = CopyOnWriteArrayList<String>()
 
     fun logEvent(event: String) {
-        dependencies.add("[\${Thread.currentThread().name}] \$event")
+        dependencies.add("[${Thread.currentThread().name}] $event")
     }
 
     fun dump() {
