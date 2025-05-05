@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.dknight.anrwatchdog.DependencyAnalyzerV3UnitTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2025-05-05T02:51:09.256Z" hostname="codespaces-4829f7" time="0.056">
+  <properties/>
+  <testcase name="testDeepBlockingChain" classname="com.dknight.anrwatchdog.DependencyAnalyzerV3UnitTest" time="0.056"/>
+  <system-out><![CDATA[----- Dependency Analyzer Dump Start -----
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+[${Thread.currentThread().name}] $event
+----- Dependency Analyzer Dump End -----
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
