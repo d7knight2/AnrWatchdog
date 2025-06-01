@@ -1,6 +1,6 @@
 # demoapp
 
-This is a demo Android app that demonstrates the usage of the anrwatchdog library.
+This is a demo Android app that demonstrates the usage of the anrwatchdog library and LeakCanary memory leak detection.
 
 ## How to Build and Run
 
@@ -22,8 +22,15 @@ This is a demo Android app that demonstrates the usage of the anrwatchdog librar
    ./gradlew :demoapp:installDebug
    ```
 
+## Features
+
+- Integrates [LeakCanary](https://square.github.io/leakcanary/) (latest alpha) for memory leak and growth detection.
+- Demonstrates tab switching in `MainActivity` with three tabs.
+- Each tab switch replaces a fragment (`TabFragment`) that runs an endless `ObjectAnimator`.
+- LeakCanary will detect leaks if fragments or animators are not properly cleaned up.
+
 ## Example Usage
 
-The demo app initializes ANRWatchdog in its `Application` class. See `MyApplication.kt` for details.
+The demo app initializes ANRWatchdog and LeakCanary in its `Application` class. See `LeakWatcherApp.kt` for details.
 
 ---
