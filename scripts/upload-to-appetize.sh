@@ -51,8 +51,12 @@ fi
 if echo "$RESPONSE" | grep -q "publicKey"; then
     echo "Upload successful!"
     
-    # Extract the public key
-    PUBLIC_KEY=$(echo "$RESPONSE" | grep -o '"publicKey":"[^"]*"' | cut -d'"' -f4)
+    # Extract the public key (try jq first, fall back to grep/cut)
+    if command -v jq &> /dev/null; then
+        PUBLIC_KEY=$(echo "$RESPONSE" | jq -r '.publicKey')
+    else
+        PUBLIC_KEY=$(echo "$RESPONSE" | grep -o '"publicKey":"[^"]*"' | cut -d'"' -f4)
+    fi
     
     echo ""
     echo "============================================"
@@ -69,10 +73,12 @@ if echo "$RESPONSE" | grep -q "publicKey"; then
     echo "$PUBLIC_KEY" > appetize-outputs/public-key.txt
     echo "https://appetize.io/app/$PUBLIC_KEY" > appetize-outputs/app-url.txt
     
-    # Output for GitHub Actions
-    if [ -n "$GITHUB_OUTPUT" ]; then
-        echo "public_key=$PUBLIC_KEY" >> $GITHUB_OUTPUT
-        echo "app_url=https://appetize.io/app/$PUBLIC_KEY" >> $GITHUB_OUTPUT
+    # Output for GitHub Actions (with validation)
+    if [ -n "$GITHUB_OUTPUT" ] && [ -f "$GITHUB_OUTPUT" ]; then
+        echo "public_key=$PUBLIC_KEY" >> "$GITHUB_OUTPUT"
+        echo "app_url=https://appetize.io/app/$PUBLIC_KEY" >> "$GITHUB_OUTPUT"
+    elif [ -n "$GITHUB_OUTPUT" ] && [ ! -f "$GITHUB_OUTPUT" ]; then
+        echo "Warning: GITHUB_OUTPUT is set but file does not exist: $GITHUB_OUTPUT"
     fi
 else
     echo "Upload failed!"

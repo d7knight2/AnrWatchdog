@@ -56,7 +56,7 @@ jobs:
            demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk
            
     - name: Upload to Firebase App Distribution
-      if: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS != '' }}
+      if: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}
       env:
         FIREBASE_SERVICE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}
       run: |
@@ -69,7 +69,7 @@ jobs:
       continue-on-error: true
       
     - name: Upload to Appetize.io
-      if: ${{ secrets.APPETIZE_API_TOKEN != '' }}
+      if: ${{ secrets.APPETIZE_API_TOKEN }}
       id: appetize
       env:
         APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
