@@ -2,6 +2,7 @@ package com.example.demoapp
 
 import android.app.Application
 import android.util.Log
+import com.example.anrwatchdog.ANRWatchdog
 
 class LeakWatcherApp : Application() {
     override fun onCreate() {
@@ -9,10 +10,16 @@ class LeakWatcherApp : Application() {
 
         // Initialize ANRWatchdog
         try {
-            // Note: This will need to be implemented when the ANRWatchdog library is ready
-            Log.d("LeakWatcherApp", "Demo app started - ANRWatchdog initialization would go here")
+            ANRWatchdog.initialize(this)
+                .setLogLevel(Log.DEBUG)
+                .setTimeout(5000)
+                .setCallback { thread ->
+                    Log.w("LeakWatcherApp", "ANR detected on thread: ${thread.name}")
+                }
+                .start()
+            Log.d("LeakWatcherApp", "Demo app started - ANRWatchdog initialized successfully")
         } catch (e: Exception) {
-            Log.w("LeakWatcherApp", "ANRWatchdog not available yet: ${e.message}")
+            Log.w("LeakWatcherApp", "ANRWatchdog initialization failed: ${e.message}")
         }
     }
 }
