@@ -142,7 +142,6 @@ object DebugInfoCollector {
     }
     
     fun formatTimestamp(timestamp: Long): String {
-        val formatter = dateFormatThreadLocal.get() ?: SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
-        return formatter.format(Date(timestamp))
+        return dateFormatThreadLocal.get().format(Date(timestamp))
     }
 }

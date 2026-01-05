@@ -309,7 +309,7 @@ private val dateFormatThreadLocal = ThreadLocal.withInitial {
 }
 
 fun formatTimestamp(timestamp: Long): String {
-    return dateFormatThreadLocal.get()!!.format(Date(timestamp))
+    return dateFormatThreadLocal.get().format(Date(timestamp))
 }
 ```
 
