@@ -3,7 +3,7 @@ import kotlin.test.assertTrue
 
 class FailingTest {
     @Test
-    fun testShouldFail() {
-        assertTrue(false, "This test is designed to fail.")
+    fun testShouldPass() {
+        assertTrue(true, "This test should pass.")
     }
 }

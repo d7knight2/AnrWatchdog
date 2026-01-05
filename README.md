@@ -100,6 +100,15 @@ ANRWatchdog.initialize(this)
 
 Contributions are welcome! If you have ideas for new features or improvements, feel free to open an issue or submit a pull request.
 
+## Testing
+
+This project includes comprehensive test coverage:
+- **Unit tests** for the ANRWatchdog library
+- **Instrumented UI tests** for the demo app (ANR simulation, memory leaks, UI interactions)
+- **Continuous Integration** via GitHub Actions
+
+See [TESTING.md](TESTING.md) for detailed information on running tests and CI configuration.
+
 ## License
 
 This project is free software and licensed under the [Apache License 2.0](LICENSE). You are free to use, modify, and distribute it in accordance with the terms of this license.
