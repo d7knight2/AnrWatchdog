@@ -37,6 +37,13 @@ class FloatingDebugView(private val context: Context) {
     private lateinit var contentLayout: LinearLayout
     private lateinit var toggleButton: Button
     
+    // Constants for UI dimensions and touch handling
+    private companion object {
+        const val CONTENT_WIDTH = 800
+        const val CONTENT_HEIGHT = 600
+        const val TOUCH_THRESHOLD = 10
+    }
+    
     /**
      * Shows the floating debug view by attaching it to the parent view
      * 
@@ -114,8 +121,8 @@ class FloatingDebugView(private val context: Context) {
         
         val scrollView = ScrollView(context).apply {
             layoutParams = LinearLayout.LayoutParams(
-                800,
-                600
+                CONTENT_WIDTH,
+                CONTENT_HEIGHT
             )
             addView(contentLayout)
         }
@@ -145,7 +152,7 @@ class FloatingDebugView(private val context: Context) {
                 val deltaY = event.rawY - initialTouchY
                 
                 // Only move if the touch has moved significantly (to distinguish from clicks)
-                if (abs(deltaX) > 10 || abs(deltaY) > 10) {
+                if (abs(deltaX) > TOUCH_THRESHOLD || abs(deltaY) > TOUCH_THRESHOLD) {
                     view.x = initialX + deltaX
                     view.y = initialY + deltaY
                     return true

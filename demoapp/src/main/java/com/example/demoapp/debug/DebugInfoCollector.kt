@@ -118,8 +118,10 @@ object DebugInfoCollector {
     
     /**
      * Formats a timestamp to a readable date/time string
+     * Thread-safe implementation using SimpleDateFormat
      */
     fun formatTimestamp(timestamp: Long): String {
+        // Create a new SimpleDateFormat instance for each call to ensure thread safety
         val dateFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
         return dateFormat.format(Date(timestamp))
     }

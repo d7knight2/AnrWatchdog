@@ -57,6 +57,13 @@ class TabFragment : Fragment() {
         animator = null
     }
     
+    /**
+     * Simulates a main thread block to test ANR detection.
+     * 
+     * WARNING: This method intentionally blocks the main thread using Thread.sleep(),
+     * which is normally not recommended. This is done specifically to simulate an ANR
+     * condition for testing and demonstration purposes.
+     */
     private fun simulateMainThreadBlock() {
         val startTime = System.currentTimeMillis()
         
@@ -65,7 +72,7 @@ class TabFragment : Fragment() {
             "  at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})"
         }
         
-        // Block the main thread for 2 seconds
+        // Block the main thread for 2 seconds (intentional for testing ANR scenarios)
         Thread.sleep(2000)
         
         val duration = System.currentTimeMillis() - startTime
