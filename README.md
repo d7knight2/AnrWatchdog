@@ -12,25 +12,35 @@ ANR Watchdog is a powerful tool designed to detect Application Not Responding (A
 
 ## Demo App
 
-The demo app includes a **Floating Debug Tool** that provides an interactive way to monitor and debug the application in real-time. This tool is perfect for developers who want to:
+The demo app includes a **Floating Debug Tool** that provides an interactive way to monitor and debug the application in real-time. This comprehensive tool is perfect for developers who want to:
 
 - View all active threads and their current states
 - Track recent main thread blocks that could lead to ANRs
-- Monitor memory usage and system resources
+- Monitor CPU usage and memory trends over time
+- Log and review UI interactions (taps, scrolls, drags)
+- Export debug logs for analysis or sharing
 - Test ANR scenarios with built-in simulation
+- Switch between dark and light themes for better visibility
 
 ### Floating Debug Tool Features
 
-The floating debug tool provides:
+The enhanced floating debug tool provides:
 
 1. **Active Threads Display**: Real-time list of all threads with names, states, IDs, priorities, and daemon status
-2. **Recent Main Thread Blocks**: Chronological history of main thread blocking events with timestamps, durations, and stack traces
-3. **General Debug Info**: System metrics including memory usage, processor count, and thread statistics
+2. **Recent Main Thread Blocks**: Chronological history of main thread blocking events with timestamps, durations, and stack traces (configurable limit)
+3. **CPU Usage Over Time**: Track CPU/memory usage trends with historical snapshots
+4. **UI Interaction Logging**: Automatic recording of taps, scrolls, and other gestures with coordinates and timing
+5. **General Debug Info**: System metrics including memory usage, processor count, thread statistics, and data counts
+6. **Export Functionality**: Save all debug logs to a text file for persistent storage and sharing
+7. **Clear Logs**: One-click button to clear all recorded data
+8. **Theme Toggle**: Switch between dark and light modes
 
 The tool is:
 - **Draggable**: Move it anywhere on the screen
 - **Collapsible**: Minimize to a small button when not in use
-- **Auto-updating**: Refreshes every 2 seconds when expanded
+- **Configurable**: Adjust update frequency and history limits
+- **Auto-updating**: Refreshes at configurable intervals when expanded (default: 2 seconds)
+- **Accessible**: Meets accessibility standards with 48dp minimum touch targets
 - **Non-intrusive**: Designed to not interfere with app functionality
 
 For detailed documentation on the Floating Debug Tool, see [demoapp/FLOATING_DEBUG_TOOL.md](demoapp/FLOATING_DEBUG_TOOL.md).
