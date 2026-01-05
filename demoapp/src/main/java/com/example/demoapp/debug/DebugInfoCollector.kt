@@ -18,6 +18,11 @@ object DebugInfoCollector {
     private val mainThreadBlocks = CopyOnWriteArrayList<MainThreadBlock>()
     private const val MAX_BLOCKS = 20
     
+    // Cache for active threads to avoid expensive getAllStackTraces() calls
+    private var cachedThreads: List<ThreadInfo> = emptyList()
+    private var lastThreadCacheTime: Long = 0
+    private const val THREAD_CACHE_DURATION_MS = 1000 // Cache for 1 second
+    
     /**
      * Data class representing a main thread block event
      */
@@ -54,7 +59,7 @@ object DebugInfoCollector {
         
         // Keep only the most recent blocks
         while (mainThreadBlocks.size > MAX_BLOCKS) {
-            mainThreadBlocks.removeAt(mainThreadBlocks.size - 1)
+            mainThreadBlocks.removeLast()
         }
     }
     
@@ -76,12 +81,21 @@ object DebugInfoCollector {
     
     /**
      * Gets information about all active threads
+     * Results are cached for 1 second to avoid expensive getAllStackTraces() calls
      * 
      * @return List of ThreadInfo objects
      */
     fun getActiveThreads(): List<ThreadInfo> {
+        val currentTime = System.currentTimeMillis()
+        
+        // Return cached result if still valid
+        if (currentTime - lastThreadCacheTime < THREAD_CACHE_DURATION_MS) {
+            return cachedThreads
+        }
+        
+        // Update cache
         val threadSet = Thread.getAllStackTraces().keys
-        return threadSet.map { thread ->
+        cachedThreads = threadSet.map { thread ->
             ThreadInfo(
                 name = thread.name,
                 state = thread.state,
@@ -90,6 +104,9 @@ object DebugInfoCollector {
                 isDaemon = thread.isDaemon
             )
         }.sortedBy { it.name }
+        
+        lastThreadCacheTime = currentTime
+        return cachedThreads
     }
     
     /**
@@ -118,11 +135,13 @@ object DebugInfoCollector {
     
     /**
      * Formats a timestamp to a readable date/time string
-     * Thread-safe implementation using SimpleDateFormat
+     * Thread-safe implementation using ThreadLocal for better performance
      */
+    private val dateFormatThreadLocal = ThreadLocal.withInitial {
+        SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+    }
+    
     fun formatTimestamp(timestamp: Long): String {
-        // Create a new SimpleDateFormat instance for each call to ensure thread safety
-        val dateFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
-        return dateFormat.format(Date(timestamp))
+        return dateFormatThreadLocal.get()!!.format(Date(timestamp))
     }
 }
