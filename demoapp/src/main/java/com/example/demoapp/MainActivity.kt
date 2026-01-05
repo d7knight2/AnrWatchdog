@@ -31,6 +31,11 @@ class MainActivity : AppCompatActivity() {
     private var lastTouchTime = 0L
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+    
+    companion object {
+        private const val TAP_DURATION_THRESHOLD_MS = 500L
+        private const val SCROLL_MOVEMENT_THRESHOLD_PX = 10f
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,7 +89,7 @@ class MainActivity : AppCompatActivity() {
             }
             MotionEvent.ACTION_UP -> {
                 val duration = System.currentTimeMillis() - lastTouchTime
-                if (duration < 500) {
+                if (duration < TAP_DURATION_THRESHOLD_MS) {
                     DebugInfoCollector.recordUiInteraction(
                         DebugInfoCollector.InteractionType.TAP,
                         ev.rawX, ev.rawY,
@@ -95,7 +100,7 @@ class MainActivity : AppCompatActivity() {
             MotionEvent.ACTION_MOVE -> {
                 val deltaX = kotlin.math.abs(ev.rawX - lastTouchX)
                 val deltaY = kotlin.math.abs(ev.rawY - lastTouchY)
-                if (deltaX > 10 || deltaY > 10) {
+                if (deltaX > SCROLL_MOVEMENT_THRESHOLD_PX || deltaY > SCROLL_MOVEMENT_THRESHOLD_PX) {
                     DebugInfoCollector.recordUiInteraction(
                         DebugInfoCollector.InteractionType.SCROLL,
                         ev.rawX, ev.rawY,
