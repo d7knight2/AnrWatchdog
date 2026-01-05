@@ -3,6 +3,7 @@ package com.example.demoapp
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
@@ -10,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.Button
 import android.widget.FrameLayout
 import android.view.ViewGroup
+import com.example.demoapp.debug.DebugInfoCollector
 import com.example.demoapp.debug.FloatingDebugView
 
 class MainActivity : AppCompatActivity() {
@@ -22,9 +24,13 @@ class MainActivity : AppCompatActivity() {
     private val updateRunnable = object : Runnable {
         override fun run() {
             floatingDebugView.updateDebugInfo()
-            handler.postDelayed(this, 2000) // Update every 2 seconds
+            handler.postDelayed(this, floatingDebugView.updateFrequency)
         }
     }
+    
+    private var lastTouchTime = 0L
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +72,41 @@ class MainActivity : AppCompatActivity() {
         
         // Start periodic updates
         handler.post(updateRunnable)
+    }
+    
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // Log UI interactions
+        when (ev.action) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchTime = System.currentTimeMillis()
+                lastTouchX = ev.rawX
+                lastTouchY = ev.rawY
+            }
+            MotionEvent.ACTION_UP -> {
+                val duration = System.currentTimeMillis() - lastTouchTime
+                if (duration < 500) {
+                    DebugInfoCollector.recordUiInteraction(
+                        DebugInfoCollector.InteractionType.TAP,
+                        ev.rawX, ev.rawY,
+                        "duration: ${duration}ms"
+                    )
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val deltaX = kotlin.math.abs(ev.rawX - lastTouchX)
+                val deltaY = kotlin.math.abs(ev.rawY - lastTouchY)
+                if (deltaX > 10 || deltaY > 10) {
+                    DebugInfoCollector.recordUiInteraction(
+                        DebugInfoCollector.InteractionType.SCROLL,
+                        ev.rawX, ev.rawY,
+                        "delta: (${String.format("%.0f", deltaX)}, ${String.format("%.0f", deltaY)})"
+                    )
+                    lastTouchX = ev.rawX
+                    lastTouchY = ev.rawY
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onDestroy() {
