@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.appdistribution")
 }
 
 android {
@@ -17,11 +19,22 @@ android {
     }
 }
 
+// Firebase App Distribution configuration
+configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
+    releaseNotesFile = file("release-notes.txt").path
+    groups = "testers"
+    serviceCredentialsFile = System.getenv("FIREBASE_SERVICE_CREDENTIALS") ?: ""
+}
+
 dependencies {
     implementation(project(":anrwatchdog"))
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.15-alpha-2")
+    
+    // Firebase dependencies
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
     
     // Testing dependencies
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -109,6 +109,15 @@ This project includes comprehensive test coverage:
 
 See [TESTING.md](TESTING.md) for detailed information on running tests and CI configuration.
 
+## App Distribution
+
+The demo app is automatically built and distributed nightly via:
+- **Firebase App Distribution**: For beta testing with registered testers
+- **Appetize.io**: For browser-based testing without device installation
+- **GitHub Actions Artifacts**: APKs available for download from workflow runs
+
+See [DISTRIBUTION.md](DISTRIBUTION.md) for detailed setup instructions, configuration, and access information.
+
 ## License
 
 This project is free software and licensed under the [Apache License 2.0](LICENSE). You are free to use, modify, and distribute it in accordance with the terms of this license.

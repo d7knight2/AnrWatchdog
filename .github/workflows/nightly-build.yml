@@ -1,0 +1,120 @@
+name: Nightly Build and Distribution
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  build-and-distribute:
+    name: Build and Distribute Nightly APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Generate build timestamp
+      id: timestamp
+      run: |
+        echo "timestamp=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+        echo "date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+        
+    - name: Update release notes with timestamp
+      run: |
+        echo "Nightly Build - ${{ steps.timestamp.outputs.date }}" > demoapp/release-notes.txt
+        echo "" >> demoapp/release-notes.txt
+        echo "This is an automated nightly build containing the latest changes from the main branch." >> demoapp/release-notes.txt
+        echo "" >> demoapp/release-notes.txt
+        echo "Commit: ${{ github.sha }}" >> demoapp/release-notes.txt
+        echo "" >> demoapp/release-notes.txt
+        echo "Features:" >> demoapp/release-notes.txt
+        echo "- ANR detection and monitoring" >> demoapp/release-notes.txt
+        echo "- Floating debug tool for real-time thread monitoring" >> demoapp/release-notes.txt
+        echo "- Memory and CPU utilization tracking" >> demoapp/release-notes.txt
+        echo "- Coroutine debugging support" >> demoapp/release-notes.txt
+        echo "" >> demoapp/release-notes.txt
+        echo "For more information, visit: https://github.com/d7knight2/AnrWatchdog" >> demoapp/release-notes.txt
+        
+    - name: Build debug APK
+      run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Rename APK with timestamp
+      run: |
+        mv demoapp/build/outputs/apk/debug/demoapp-debug.apk \
+           demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk
+           
+    - name: Upload to Firebase App Distribution
+      env:
+        FIREBASE_SERVICE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}
+      run: |
+        if [ -n "$FIREBASE_SERVICE_CREDENTIALS" ]; then
+          echo "Firebase credentials found, uploading to Firebase App Distribution..."
+          ./gradlew appDistributionUploadDebug --stacktrace
+        else
+          echo "Skipping Firebase upload - FIREBASE_SERVICE_CREDENTIALS not configured"
+        fi
+      continue-on-error: true
+      
+    - name: Upload to Appetize.io
+      id: appetize
+      env:
+        APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+        APPETIZE_PUBLIC_KEY: ${{ secrets.APPETIZE_PUBLIC_KEY }}
+      run: |
+        if [ -n "$APPETIZE_API_TOKEN" ]; then
+          echo "Appetize.io credentials found, uploading..."
+          chmod +x scripts/upload-to-appetize.sh
+          ./scripts/upload-to-appetize.sh \
+            demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk \
+            $APPETIZE_PUBLIC_KEY
+        else
+          echo "Skipping Appetize.io upload - APPETIZE_API_TOKEN not configured"
+        fi
+      continue-on-error: true
+        
+    - name: Upload APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nightly-apk-${{ steps.timestamp.outputs.timestamp }}
+        path: demoapp/build/outputs/apk/debug/*.apk
+        retention-days: 30
+        
+    - name: Create build summary
+      if: always()
+      run: |
+        echo "## Nightly Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Build Date:** ${{ steps.timestamp.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -n "${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}" ]; then
+          echo "✅ **Firebase App Distribution:** Uploaded" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ **Firebase App Distribution:** Not configured" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -n "${{ secrets.APPETIZE_API_TOKEN }}" ]; then
+          echo "✅ **Appetize.io:** Uploaded" >> $GITHUB_STEP_SUMMARY
+          if [ -f appetize-outputs/app-url.txt ]; then
+            APP_URL=$(cat appetize-outputs/app-url.txt)
+            echo "   - App URL: $APP_URL" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⚠️ **Appetize.io:** Not configured" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**APK Location:** \`demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk\`" >> $GITHUB_STEP_SUMMARY
