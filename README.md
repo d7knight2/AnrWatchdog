@@ -8,6 +8,32 @@ ANR Watchdog is a powerful tool designed to detect Application Not Responding (A
 - **Thread State and Traces Logging**: Captures the states and stack traces of all threads at the moment of detection.
 - **Resource Monitoring**: Prints the CPU and memory utilization at runtime for better understanding of resource usage.
 - **Coroutine Debugging**: Utilizes coroutine debug probes to print the creation stack traces of active coroutines, aiding in coroutine lifecycle analysis.
+- **Floating Debug Tool (Demo App)**: Interactive UI overlay for real-time monitoring of threads, main thread blocks, and system resources.
+
+## Demo App
+
+The demo app includes a **Floating Debug Tool** that provides an interactive way to monitor and debug the application in real-time. This tool is perfect for developers who want to:
+
+- View all active threads and their current states
+- Track recent main thread blocks that could lead to ANRs
+- Monitor memory usage and system resources
+- Test ANR scenarios with built-in simulation
+
+### Floating Debug Tool Features
+
+The floating debug tool provides:
+
+1. **Active Threads Display**: Real-time list of all threads with names, states, IDs, priorities, and daemon status
+2. **Recent Main Thread Blocks**: Chronological history of main thread blocking events with timestamps, durations, and stack traces
+3. **General Debug Info**: System metrics including memory usage, processor count, and thread statistics
+
+The tool is:
+- **Draggable**: Move it anywhere on the screen
+- **Collapsible**: Minimize to a small button when not in use
+- **Auto-updating**: Refreshes every 2 seconds when expanded
+- **Non-intrusive**: Designed to not interfere with app functionality
+
+For detailed documentation on the Floating Debug Tool, see [demoapp/FLOATING_DEBUG_TOOL.md](demoapp/FLOATING_DEBUG_TOOL.md).
 
 ## Installation
 
