@@ -1,0 +1,157 @@
+name: Upload APK to Appetize.io
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  upload-to-appetize:
+    name: Build and Upload APK to Appetize.io
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build debug APK
+      run: |
+        echo "Building debug APK for AnrWatchdog demo..."
+        ./gradlew :demoapp:assembleDebug --stacktrace
+        echo "APK build completed successfully"
+      
+    - name: Discover APK files
+      id: discover_apk
+      run: |
+        echo "Searching for APK files in demoapp/build/outputs/apk/debug/"
+        
+        # Find APK files
+        APK_FILES=$(find demoapp/build/outputs/apk/debug -name "*.apk" -type f 2>/dev/null || true)
+        
+        if [ -z "$APK_FILES" ]; then
+          echo "ERROR: No APK files found in demoapp/build/outputs/apk/debug/"
+          echo "Build output directory contents:"
+          ls -R demoapp/build/outputs/ || echo "Build outputs directory does not exist"
+          exit 1
+        fi
+        
+        # Get the first APK file
+        APK_PATH=$(echo "$APK_FILES" | head -n 1)
+        echo "Found APK: $APK_PATH"
+        
+        # Verify APK file exists and is readable
+        if [ ! -f "$APK_PATH" ]; then
+          echo "ERROR: APK file not found at path: $APK_PATH"
+          exit 1
+        fi
+        
+        if [ ! -r "$APK_PATH" ]; then
+          echo "ERROR: APK file is not readable: $APK_PATH"
+          exit 1
+        fi
+        
+        # Get APK file size
+        APK_SIZE=$(ls -lh "$APK_PATH" | awk '{print $5}')
+        echo "APK size: $APK_SIZE"
+        
+        # Save to output
+        echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+        
+        echo "APK discovery completed successfully"
+        
+    - name: Upload to Appetize.io
+      id: appetize_upload
+      env:
+        APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_TOKEN }}
+        APPETIZE_PUBLIC_KEY: ${{ secrets.APPETIZE_PUBLIC_KEY }}
+      run: |
+        APK_PATH="${{ steps.discover_apk.outputs.apk_path }}"
+        
+        if [ -z "$APPETIZE_API_TOKEN" ]; then
+          echo "ERROR: APPETIZE_TOKEN secret is not configured"
+          echo "Please add APPETIZE_TOKEN to your repository secrets"
+          echo "Visit: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          exit 1
+        fi
+        
+        echo "================================================"
+        echo "Uploading APK to Appetize.io"
+        echo "================================================"
+        echo "APK Path: $APK_PATH"
+        echo "APK Size: ${{ steps.discover_apk.outputs.apk_size }}"
+        echo "Platform: Android"
+        echo "================================================"
+        
+        # Make script executable and run upload
+        chmod +x scripts/upload-to-appetize.sh
+        
+        if [ -n "$APPETIZE_PUBLIC_KEY" ]; then
+          echo "Updating existing app with public key: $APPETIZE_PUBLIC_KEY"
+          ./scripts/upload-to-appetize.sh "$APK_PATH" "$APPETIZE_PUBLIC_KEY"
+        else
+          echo "Creating new app on Appetize.io"
+          ./scripts/upload-to-appetize.sh "$APK_PATH"
+        fi
+        
+        echo "Upload completed successfully"
+        
+    - name: Create upload summary
+      if: always()
+      run: |
+        echo "## Appetize.io Upload Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Workflow:** ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "appetize-outputs/app-url.txt" ]; then
+          echo "### ✅ Upload Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          APP_URL=$(cat appetize-outputs/app-url.txt)
+          PUBLIC_KEY=$(cat appetize-outputs/public-key.txt)
+          
+          echo "- **Public Key:** \`$PUBLIC_KEY\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **App URL:** [$APP_URL]($APP_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK Size:** ${{ steps.discover_apk.outputs.apk_size }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "You can now test the app directly in your browser!" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.appetize_upload.outcome }}" == "failure" ]; then
+          echo "### ❌ Upload Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The upload to Appetize.io failed. Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing or invalid APPETIZE_TOKEN secret" >> $GITHUB_STEP_SUMMARY
+          echo "- Network connectivity issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Invalid APK file" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.discover_apk.outcome }}" == "failure" ]; then
+          echo "### ❌ APK Discovery Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "No APK files were found. The build may have failed." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ⚠️ Upload Status Unknown" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The workflow completed but the upload status could not be determined." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Upload APK as artifact
+      if: steps.discover_apk.outcome == 'success'
+      uses: actions/upload-artifact@v4
+      with:
+        name: appetize-apk-${{ github.sha }}
+        path: ${{ steps.discover_apk.outputs.apk_path }}
+        retention-days: 30
