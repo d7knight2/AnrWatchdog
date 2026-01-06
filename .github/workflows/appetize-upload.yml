@@ -9,6 +9,8 @@ jobs:
   upload-to-appetize:
     name: Build and Upload APK to Appetize.io
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Checkout code
