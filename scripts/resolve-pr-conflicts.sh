@@ -80,7 +80,11 @@ CONFLICTS_DETECTED=0
 CONFLICTS_RESOLVED=0
 CONFLICTS_FAILED=0
 
-# Process each pull request
+# Store the current branch to return to later
+ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+
+# Process each pull request (only if there are PRs)
+if [ "$PR_COUNT" -gt 0 ]; then
 for i in $(seq 0 $((PR_COUNT - 1))); do
     PR_NUMBER=$(echo "$PRS_JSON" | jq -r ".[$i].number")
     PR_TITLE=$(echo "$PRS_JSON" | jq -r ".[$i].title")
@@ -153,20 +157,27 @@ for i in $(seq 0 $((PR_COUNT - 1))); do
                 log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ✅ Conflicts resolved automatically"
                 CONFLICTS_RESOLVED=$((CONFLICTS_RESOLVED + 1))
                 
-                # Add a comment to the PR
-                COMMENT_BODY="🤖 **Automatic Conflict Resolution**\n\nThe merge conflicts in this PR have been automatically resolved by merging the base branch (\`$PR_BASE_REF\`) into this branch.\n\nPlease review the changes and ensure everything is correct before merging."
+                # Add a comment to the PR using jq to properly escape JSON
+                COMMENT_TEXT="🤖 **Automatic Conflict Resolution**
+
+The merge conflicts in this PR have been automatically resolved by merging the base branch (\`$PR_BASE_REF\`) into this branch.
+
+Please review the changes and ensure everything is correct before merging."
                 
+                jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
                 curl -s -X POST \
                     -H "Authorization: token $GITHUB_TOKEN" \
                     -H "Accept: application/vnd.github.v3+json" \
+                    -H "Content-Type: application/json" \
                     "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                    -d "{\"body\":\"$COMMENT_BODY\"}" > /dev/null
+                    -d @- > /dev/null
                 
             else
                 echo -e "${RED}❌ Failed to push changes to $PR_HEAD_REF${NC}"
                 log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Merge succeeded but push failed"
                 CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
-                git merge --abort 2>/dev/null || true
+                # Reset to the state before the merge since we couldn't push
+                git reset --hard HEAD~1 2>/dev/null || true
             fi
         else
             echo -e "${RED}❌ Automatic merge failed - manual intervention required${NC}"
@@ -180,18 +191,26 @@ for i in $(seq 0 $((PR_COUNT - 1))); do
             # Abort the merge
             git merge --abort
             
-            # Add a comment to the PR about the failure
-            COMMENT_BODY="🤖 **Automatic Conflict Resolution Failed**\n\nAttempted to automatically resolve merge conflicts by merging the base branch (\`$PR_BASE_REF\`), but the merge failed due to conflicts that require manual resolution.\n\n**Conflicting files:**\n\`\`\`\n$CONFLICT_FILES\n\`\`\`\n\nPlease resolve these conflicts manually."
+            # Add a comment to the PR about the failure using jq to properly escape JSON
+            COMMENT_TEXT="🤖 **Automatic Conflict Resolution Failed**
+
+Attempted to automatically resolve merge conflicts by merging the base branch (\`$PR_BASE_REF\`), but the merge failed due to conflicts that require manual resolution.
+
+**Conflicting files:**
+\`\`\`
+$CONFLICT_FILES
+\`\`\`
+
+Please resolve these conflicts manually."
             
+            jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
             curl -s -X POST \
                 -H "Authorization: token $GITHUB_TOKEN" \
                 -H "Accept: application/vnd.github.v3+json" \
+                -H "Content-Type: application/json" \
                 "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                -d "{\"body\":\"$COMMENT_BODY\"}" > /dev/null
+                -d @- > /dev/null
         fi
-        
-        # Return to main/default branch
-        git checkout - 2>/dev/null || git checkout main 2>/dev/null || git checkout master 2>/dev/null || true
         
     else
         echo -e "${GREEN}✓ No conflicts detected${NC}"
@@ -200,6 +219,12 @@ for i in $(seq 0 $((PR_COUNT - 1))); do
     
     echo ""
 done
+fi
+
+# Return to the original branch
+if [ -n "$ORIGINAL_BRANCH" ] && [ "$ORIGINAL_BRANCH" != "HEAD" ]; then
+    git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
+fi
 
 # Print summary
 echo "============================================"
