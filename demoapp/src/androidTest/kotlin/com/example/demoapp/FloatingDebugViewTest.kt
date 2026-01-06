@@ -188,23 +188,26 @@ class FloatingDebugViewTest {
     
     @Test
     fun testMaxBlocksConfiguration() {
-        // Set max blocks to 5
-        DebugInfoCollector.maxBlocks = 5
-        
-        // Add 10 blocks
-        for (i in 1..10) {
-            DebugInfoCollector.recordMainThreadBlock(100L * i, "stack trace $i")
+        val originalMaxBlocks = DebugInfoCollector.maxBlocks
+        try {
+            // Set max blocks to 5
+            DebugInfoCollector.maxBlocks = 5
+            
+            // Add 10 blocks
+            for (i in 1..10) {
+                DebugInfoCollector.recordMainThreadBlock(100L * i, "stack trace $i")
+            }
+            
+            // Verify only 5 are kept
+            val blocks = DebugInfoCollector.getRecentMainThreadBlocks()
+            assertEquals(5, blocks.size, "Should only keep max 5 blocks")
+            
+            // Verify most recent blocks are kept (10, 9, 8, 7, 6)
+            assertEquals(1000L, blocks[0].duration, "Most recent block should be first")
+        } finally {
+            // Reset to original value to avoid affecting other tests
+            DebugInfoCollector.maxBlocks = originalMaxBlocks
         }
-        
-        // Verify only 5 are kept
-        val blocks = DebugInfoCollector.getRecentMainThreadBlocks()
-        assertEquals(5, blocks.size, "Should only keep max 5 blocks")
-        
-        // Verify most recent blocks are kept (10, 9, 8, 7, 6)
-        assertEquals(1000L, blocks[0].duration, "Most recent block should be first")
-        
-        // Reset to default
-        DebugInfoCollector.maxBlocks = 20
     }
     
     @Test

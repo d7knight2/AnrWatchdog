@@ -3,7 +3,7 @@ package com.example.demoapp.debug
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.os.Debug
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -23,7 +23,7 @@ import kotlin.math.abs
  * - Active threads with their names and statuses
  * - Recent main thread blocks
  * - General debug information
- * - CPU usage over time
+ * - Memory usage over time (used as performance approximation)
  * - UI interactions
  * 
  * Features:
@@ -52,6 +52,7 @@ class FloatingDebugView(private val context: Context) {
     private lateinit var toggleButton: Button
     private lateinit var mainLayout: LinearLayout
     private lateinit var buttonBar: LinearLayout
+    private lateinit var themeButton: Button
     
     // Configurable update frequency (milliseconds)
     var updateFrequency: Long = 2000
@@ -64,7 +65,15 @@ class FloatingDebugView(private val context: Context) {
         const val CONTENT_WIDTH = 800
         const val CONTENT_HEIGHT = 600
         const val TOUCH_THRESHOLD = 10
-        const val MIN_TOUCH_SIZE = 120 // 48dp minimum for accessibility (assuming 2.5 density)
+    }
+    
+    // Calculate minimum touch size based on actual device density (48dp)
+    private val minTouchSize: Int by lazy {
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            48f,
+            context.resources.displayMetrics
+        ).toInt()
     }
     
     /**
@@ -116,19 +125,19 @@ class FloatingDebugView(private val context: Context) {
         // Add section titles and data
         addSection("Active Threads", getActiveThreadsText())
         addSection("Recent Main Thread Blocks", getMainThreadBlocksText())
-        addSection("CPU Usage Over Time", getCpuUsageText())
+        addSection("Memory Usage Over Time", getMemoryUsageText())
         addSection("Recent UI Interactions", getUiInteractionsText())
         addSection("General Debug Info", getGeneralDebugInfoText())
     }
     
     private fun updateCpuUsage() {
-        // Get CPU usage - using a simple approximation based on memory
+        // Get memory usage as performance indicator
         val runtime = Runtime.getRuntime()
         val usedMemory = (runtime.totalMemory() - runtime.freeMemory()).toFloat()
         val maxMemory = runtime.maxMemory().toFloat()
         val memoryUsagePercent = (usedMemory / maxMemory * 100).coerceIn(0f, 100f)
         
-        // Record CPU usage (using memory as proxy since actual CPU is harder to measure)
+        // Record memory usage (not actual CPU, but useful as performance proxy)
         DebugInfoCollector.recordCpuUsage(memoryUsagePercent)
     }
     
@@ -147,8 +156,8 @@ class FloatingDebugView(private val context: Context) {
             setBackgroundColor(0xFF2196F3.toInt())
             val padding = 20
             setPadding(padding, padding, padding, padding)
-            minHeight = MIN_TOUCH_SIZE
-            minWidth = MIN_TOUCH_SIZE * 2
+            minHeight = minTouchSize
+            minWidth = minTouchSize * 2
             setOnClickListener {
                 toggleExpanded()
             }
@@ -167,7 +176,7 @@ class FloatingDebugView(private val context: Context) {
             setTextColor(Color.WHITE)
             setBackgroundColor(0xFFE53935.toInt())
             setPadding(15, 15, 15, 15)
-            minHeight = MIN_TOUCH_SIZE
+            minHeight = minTouchSize
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = 8
             }
@@ -178,12 +187,12 @@ class FloatingDebugView(private val context: Context) {
         buttonBar.addView(clearButton)
         
         // Theme toggle button
-        val themeButton = Button(context).apply {
-            text = "🌙"
+        themeButton = Button(context).apply {
+            text = if (isDarkMode) "☀️" else "🌙"
             setTextColor(Color.WHITE)
             setBackgroundColor(0xFF757575.toInt())
             setPadding(15, 15, 15, 15)
-            minHeight = MIN_TOUCH_SIZE
+            minHeight = minTouchSize
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = 8
             }
@@ -199,7 +208,7 @@ class FloatingDebugView(private val context: Context) {
             setTextColor(Color.WHITE)
             setBackgroundColor(0xFF43A047.toInt())
             setPadding(15, 15, 15, 15)
-            minHeight = MIN_TOUCH_SIZE
+            minHeight = minTouchSize
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener {
                 exportLogs()
@@ -272,6 +281,8 @@ class FloatingDebugView(private val context: Context) {
     private fun toggleTheme() {
         isDarkMode = !isDarkMode
         mainLayout.setBackgroundColor(getBackgroundColor())
+        // Update theme button to show opposite mode (sun in dark mode, moon in light mode)
+        themeButton.text = if (isDarkMode) "☀️" else "🌙"
         updateDebugInfo()
     }
     
@@ -383,14 +394,16 @@ class FloatingDebugView(private val context: Context) {
     private fun getCpuUsageText(): String {
         val history = DebugInfoCollector.getCpuUsageHistory()
         return if (history.isEmpty()) {
-            "No CPU data available yet"
+            "No memory data available yet"
         } else {
             val recent = history.takeLast(10)
             recent.joinToString("\n") { snapshot ->
-                "${DebugInfoCollector.formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% (${snapshot.totalThreads} threads)"
+                "${DebugInfoCollector.formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% memory (${snapshot.totalThreads} threads)"
             }
         }
     }
+    
+    private fun getMemoryUsageText(): String = getCpuUsageText()
     
     private fun getUiInteractionsText(): String {
         val interactions = DebugInfoCollector.getUiInteractions()

@@ -2,8 +2,6 @@ package com.example.demoapp.debug
 
 import android.content.Context
 import android.os.Looper
-import android.os.SystemClock
-import android.view.MotionEvent
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -16,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * - Get a list of all active threads with their names and statuses
  * - Track recent main thread blocks
  * - Collect general debug information
- * - Track CPU usage over time
+ * - Track memory usage over time (as performance indicator)
  * - Log UI interactions (taps and scrolls)
  * - Export debug logs to files
  */
@@ -66,11 +64,12 @@ object DebugInfoCollector {
     )
     
     /**
-     * Data class representing CPU usage at a point in time
+     * Data class representing memory usage at a point in time.
+     * Note: This is called "CpuUsageSnapshot" for API compatibility but actually tracks memory usage.
      */
     data class CpuUsageSnapshot(
         val timestamp: Long,
-        val cpuUsagePercent: Float,
+        val cpuUsagePercent: Float, // Actually memory usage percentage
         val totalThreads: Int
     )
     
@@ -128,9 +127,9 @@ object DebugInfoCollector {
     }
     
     /**
-     * Records a CPU usage snapshot
+     * Records a memory usage snapshot (named for API compatibility).
      * 
-     * @param cpuUsagePercent CPU usage percentage (0-100)
+     * @param cpuUsagePercent Memory usage percentage (0-100), not actual CPU usage
      */
     fun recordCpuUsage(cpuUsagePercent: Float) {
         val snapshot = CpuUsageSnapshot(
@@ -149,16 +148,16 @@ object DebugInfoCollector {
     }
     
     /**
-     * Gets CPU usage history
+     * Gets CPU usage history (actually memory usage).
      * 
-     * @return List of CPU usage snapshots
+     * @return List of memory usage snapshots
      */
     fun getCpuUsageHistory(): List<CpuUsageSnapshot> {
         return cpuUsageHistory.toList()
     }
     
     /**
-     * Clears all CPU usage history
+     * Clears all CPU usage history (actually memory usage).
      */
     fun clearCpuUsageHistory() {
         cpuUsageHistory.clear()
@@ -265,6 +264,10 @@ object DebugInfoCollector {
      * @param context Android context for file access
      * @param filename Name of the file to export to
      * @return The exported file or null if export failed
+     * 
+     * Note: Uses getExternalFilesDir() which doesn't require WRITE_EXTERNAL_STORAGE 
+     * permission on Android 4.4+ (API 19+). The file is stored in app-specific 
+     * external storage that's automatically cleaned up on app uninstall.
      */
     fun exportLogsToFile(context: Context, filename: String = "debug_logs_${System.currentTimeMillis()}.txt"): File? {
         return try {
@@ -292,9 +295,9 @@ object DebugInfoCollector {
                 writer.write("\n")
                 
                 // CPU usage history
-                writer.write("=== CPU Usage History (${cpuUsageHistory.size}) ===\n")
+                writer.write("=== Memory Usage History (${cpuUsageHistory.size}) ===\n")
                 cpuUsageHistory.forEach { snapshot ->
-                    writer.write("${formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% (${snapshot.totalThreads} threads)\n")
+                    writer.write("${formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% memory (${snapshot.totalThreads} threads)\n")
                 }
                 writer.write("\n")
                 

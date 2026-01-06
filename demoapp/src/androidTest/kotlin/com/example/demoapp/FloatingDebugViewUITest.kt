@@ -1,5 +1,6 @@
 package com.example.demoapp
 
+import android.util.TypedValue
 import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -9,6 +10,7 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.demoapp.debug.DebugInfoCollector
 import org.hamcrest.Matcher
 import org.junit.After
@@ -159,6 +161,14 @@ class FloatingDebugViewUITest {
 
     @Test
     fun testDebugToolButtonAccessibility() {
+        // Calculate actual min size in pixels based on device density (48dp)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val minSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            48f,
+            context.resources.displayMetrics
+        ).toInt()
+        
         // Verify button meets minimum touch target size
         onView(withText(containsString("Debug Tool")))
             .check { view, noViewFoundException ->
@@ -166,16 +176,23 @@ class FloatingDebugViewUITest {
                     throw noViewFoundException
                 }
                 
-                val minSize = 120 // 48dp at 2.5 density
                 assertTrue(view.height >= minSize || view.minimumHeight >= minSize,
-                    "Button height should meet accessibility standards (48dp)")
+                    "Button height should meet accessibility standards (48dp = ${minSize}px)")
                 assertTrue(view.width >= minSize || view.minimumWidth >= minSize,
-                    "Button width should meet accessibility standards (48dp)")
+                    "Button width should meet accessibility standards (48dp = ${minSize}px)")
             }
     }
 
     @Test
     fun testActionButtonsAccessibility() {
+        // Calculate actual min size in pixels based on device density (48dp)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val minSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            48f,
+            context.resources.displayMetrics
+        ).toInt()
+        
         // Expand debug tool
         onView(withText(containsString("Debug Tool"))).perform(click())
         Thread.sleep(500)
@@ -187,9 +204,8 @@ class FloatingDebugViewUITest {
                     throw noViewFoundException
                 }
                 
-                val minSize = 120 // 48dp at 2.5 density
                 assertTrue(view.height >= minSize || view.minimumHeight >= minSize,
-                    "Clear button should meet accessibility standards")
+                    "Clear button should meet accessibility standards (48dp = ${minSize}px)")
             }
         
         // Check Export button accessibility
@@ -199,9 +215,8 @@ class FloatingDebugViewUITest {
                     throw noViewFoundException
                 }
                 
-                val minSize = 120
                 assertTrue(view.height >= minSize || view.minimumHeight >= minSize,
-                    "Export button should meet accessibility standards")
+                    "Export button should meet accessibility standards (48dp = ${minSize}px)")
             }
     }
 

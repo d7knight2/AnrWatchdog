@@ -31,10 +31,12 @@ class MainActivity : AppCompatActivity() {
     private var lastTouchTime = 0L
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+    private var lastScrollLogTime = 0L // Track last scroll log time to prevent flooding
     
     companion object {
         private const val TAP_DURATION_THRESHOLD_MS = 500L
         private const val SCROLL_MOVEMENT_THRESHOLD_PX = 10f
+        private const val SCROLL_LOG_INTERVAL_MS = 100L // Minimum time between scroll logs
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +88,7 @@ class MainActivity : AppCompatActivity() {
                 lastTouchTime = System.currentTimeMillis()
                 lastTouchX = ev.rawX
                 lastTouchY = ev.rawY
+                lastScrollLogTime = 0L // Reset scroll log time on new gesture
             }
             MotionEvent.ACTION_UP -> {
                 val duration = System.currentTimeMillis() - lastTouchTime
@@ -100,7 +103,12 @@ class MainActivity : AppCompatActivity() {
             MotionEvent.ACTION_MOVE -> {
                 val deltaX = kotlin.math.abs(ev.rawX - lastTouchX)
                 val deltaY = kotlin.math.abs(ev.rawY - lastTouchY)
-                if (deltaX > SCROLL_MOVEMENT_THRESHOLD_PX || deltaY > SCROLL_MOVEMENT_THRESHOLD_PX) {
+                val currentTime = System.currentTimeMillis()
+                
+                // Only log scroll if movement is significant AND enough time has passed
+                // This prevents flooding with hundreds of scroll events per second
+                if ((deltaX > SCROLL_MOVEMENT_THRESHOLD_PX || deltaY > SCROLL_MOVEMENT_THRESHOLD_PX) &&
+                    (currentTime - lastScrollLogTime >= SCROLL_LOG_INTERVAL_MS)) {
                     DebugInfoCollector.recordUiInteraction(
                         DebugInfoCollector.InteractionType.SCROLL,
                         ev.rawX, ev.rawY,
@@ -108,6 +116,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     lastTouchX = ev.rawX
                     lastTouchY = ev.rawY
+                    lastScrollLogTime = currentTime
                 }
             }
         }
