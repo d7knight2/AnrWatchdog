@@ -391,7 +391,7 @@ class FloatingDebugView(private val context: Context) {
         }
     }
     
-    private fun getCpuUsageText(): String {
+    private fun getMemoryUsageText(): String {
         val history = DebugInfoCollector.getCpuUsageHistory()
         return if (history.isEmpty()) {
             "No memory data available yet"
@@ -402,8 +402,6 @@ class FloatingDebugView(private val context: Context) {
             }
         }
     }
-    
-    private fun getMemoryUsageText(): String = getCpuUsageText()
     
     private fun getUiInteractionsText(): String {
         val interactions = DebugInfoCollector.getUiInteractions()
