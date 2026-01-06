@@ -4,6 +4,65 @@ This directory contains utility scripts for the ANR Watchdog project.
 
 ## Available Scripts
 
+### resolve-pr-conflicts.sh
+
+Automatically detects and resolves merge conflicts in open pull requests by merging the base branch into the PR branch.
+
+**Usage:**
+```bash
+# Set required environment variables
+export GITHUB_TOKEN="your_github_token_here"
+export GITHUB_REPOSITORY="owner/repo"
+
+# Run the script
+./scripts/resolve-pr-conflicts.sh
+```
+
+**Requirements:**
+- `GITHUB_TOKEN` environment variable must be set (with repo and PR permissions)
+- `GITHUB_REPOSITORY` environment variable must be set (format: "owner/repo")
+- `git` command available
+- `curl` command available
+- `jq` command available
+
+**Features:**
+- Detects all open pull requests in the repository
+- Identifies PRs with merge conflicts
+- Attempts automatic conflict resolution by merging the base branch
+- Commits and pushes changes if merge is successful
+- Adds comments to PRs about resolution status
+- Logs detailed success/failure information
+- Skips PRs from forks (cannot push to fork branches)
+
+**Output:**
+- Console: Detailed progress and results for each PR
+- `/tmp/conflict-resolution-summary.txt`: Summary report for GitHub Actions
+- GitHub PR comments: Notifications about resolution attempts
+
+**GitHub Actions Integration:**
+This script is automatically run hourly by the `.github/workflows/pr-conflict-resolver.yml` workflow.
+
+**Example Output:**
+```
+============================================
+PR Conflict Auto-Resolver
+============================================
+
+Repository: owner/repo
+Found 3 open pull request(s)
+
+----------------------------------------
+PR #123: Feature implementation
+Head: feature-branch (abc123)
+Base: main
+Mergeable: false
+⚠️  PR #123 has merge conflicts
+Attempting to resolve conflicts...
+✅ Merge successful!
+✅ Successfully resolved conflicts for PR #123
+============================================
+```
+
 ### upload-to-appetize.sh
 
 Uploads APK files to Appetize.io for browser-based testing.
