@@ -29,7 +29,9 @@ You can manually trigger the workflow at any time:
 1. Go to the "Actions" tab in your repository
 2. Select "Nightly Merge Conflict Resolver" from the workflows list
 3. Click "Run workflow"
-4. Select the branch and click "Run workflow"
+4. Select the branch
+5. (Optional) Set the maximum number of PRs to process (default: 100)
+6. Click "Run workflow"
 
 ## How It Works
 
@@ -130,7 +132,7 @@ Resolution logs are stored as workflow artifacts for 30 days and include:
 
 - The workflow can only resolve conflicts that Git can automatically merge
 - Complex conflicts involving overlapping changes will require manual resolution
-- The workflow processes up to 100 open PRs per run (configurable)
+- The workflow processes up to 100 open PRs per run by default (configurable via workflow_dispatch input)
 - Resolution attempts may fail for PRs from forks if proper permissions aren't set
 
 ## Troubleshooting
@@ -155,9 +157,14 @@ Resolution logs are stored as workflow artifacts for 30 days and include:
 You can customize the workflow by editing `.github/workflows/merge-conflict-resolver.yml`:
 
 - **Schedule**: Modify the cron expression to change execution time
-- **PR Limit**: Change `--limit 100` to process more or fewer PRs
+- **PR Limit**: Use the workflow_dispatch input to set a custom limit when manually triggering, or modify the default value in the workflow inputs
 - **Artifact Retention**: Modify `retention-days: 30` to change how long logs are kept
 - **Merge Strategy**: Add custom merge options to the `git merge` command
+
+### Workflow Inputs
+
+When manually triggering the workflow, you can specify:
+- `pr_limit`: Maximum number of PRs to process (default: 100)
 
 ## Example Output
 
