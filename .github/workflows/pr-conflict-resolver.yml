@@ -1,0 +1,49 @@
+name: PR Conflict Auto-Resolver
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-conflicts:
+    name: Detect and Resolve PR Conflicts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+    - name: Run conflict resolution script
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        chmod +x scripts/resolve-pr-conflicts.sh
+        ./scripts/resolve-pr-conflicts.sh
+        
+    - name: Create workflow summary
+      if: always()
+      run: |
+        if [ -f /tmp/conflict-resolution-summary.txt ]; then
+          echo "## PR Conflict Resolution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/conflict-resolution-summary.txt >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## PR Conflict Resolution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "No summary file generated. Check the logs for details." >> $GITHUB_STEP_SUMMARY
+        fi
