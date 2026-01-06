@@ -4,6 +4,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.io.File
+import java.nio.file.Files
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -21,7 +22,7 @@ class ApkDiscoveryTest {
     @Before
     fun setup() {
         // Create temporary directories for testing
-        tempDir = createTempDir("apk-discovery-test")
+        tempDir = Files.createTempDirectory("apk-discovery-test").toFile()
         apkOutputDir = File(tempDir, "demoapp/build/outputs/apk/debug").apply {
             mkdirs()
         }

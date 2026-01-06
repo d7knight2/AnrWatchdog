@@ -295,8 +295,10 @@ class AppetizeUploadTest {
             return token.isNotBlank()
         }
 
+        private var idCounter = 0
+
         private fun generatePublicKey(): String {
-            return "test_${System.currentTimeMillis()}_${(0..999).random()}"
+            return "test_mock_${++idCounter}"
         }
     }
 }

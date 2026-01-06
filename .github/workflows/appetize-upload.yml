@@ -65,11 +65,12 @@ jobs:
         # Get APK file size (portable approach)
         if command -v stat > /dev/null 2>&1; then
           # Try GNU stat first, then BSD stat
-          APK_SIZE=$(stat -c%s "$APK_PATH" 2>/dev/null || stat -f%z "$APK_PATH" 2>/dev/null || echo "0")
-          # Convert to human-readable format
-          if [ "$APK_SIZE" -gt 0 ]; then
-            APK_SIZE_MB=$(echo "scale=2; $APK_SIZE / 1048576" | bc)
-            APK_SIZE="${APK_SIZE_MB}MB (${APK_SIZE} bytes)"
+          APK_SIZE_BYTES=$(stat -c%s "$APK_PATH" 2>/dev/null || stat -f%z "$APK_PATH" 2>/dev/null || echo "0")
+          # Convert to human-readable format using shell arithmetic
+          if [ "$APK_SIZE_BYTES" -gt 0 ]; then
+            APK_SIZE_MB=$((APK_SIZE_BYTES / 1048576))
+            APK_SIZE_KB=$(((APK_SIZE_BYTES % 1048576) / 1024))
+            APK_SIZE="${APK_SIZE_MB}.${APK_SIZE_KB}MB (${APK_SIZE_BYTES} bytes)"
           else
             APK_SIZE="unknown"
           fi
