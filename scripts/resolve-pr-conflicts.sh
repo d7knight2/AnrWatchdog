@@ -60,7 +60,8 @@ fi
 # Count the number of PRs
 PR_COUNT=$(echo "$PRS_JSON" | jq '. | length')
 
-if [ -z "$PR_COUNT" ] || [ "$PR_COUNT" == "null" ]; then
+# Validate PR_COUNT is a valid positive integer
+if [ -z "$PR_COUNT" ] || [ "$PR_COUNT" == "null" ] || ! [[ "$PR_COUNT" =~ ^[0-9]+$ ]]; then
     echo -e "${YELLOW}No pull requests found or error parsing response${NC}"
     log_summary "ℹ️ No open pull requests found"
     exit 0
@@ -176,8 +177,8 @@ Please review the changes and ensure everything is correct before merging."
                 echo -e "${RED}❌ Failed to push changes to $PR_HEAD_REF${NC}"
                 log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Merge succeeded but push failed"
                 CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
-                # Reset to the state before the merge since we couldn't push
-                git reset --hard HEAD~1 2>/dev/null || true
+                # Reset to the original remote state before the merge attempt
+                git reset --hard "origin/$PR_HEAD_REF" 2>/dev/null || true
             fi
         else
             echo -e "${RED}❌ Automatic merge failed - manual intervention required${NC}"
@@ -188,8 +189,8 @@ Please review the changes and ensure everything is correct before merging."
             log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Automatic merge failed (conflicting files: $CONFLICT_FILES)"
             CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
             
-            # Abort the merge
-            git merge --abort
+            # Clean up the failed merge by resetting to HEAD
+            git reset --hard HEAD 2>/dev/null || true
             
             # Add a comment to the PR about the failure using jq to properly escape JSON
             COMMENT_TEXT="🤖 **Automatic Conflict Resolution Failed**
