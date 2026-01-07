@@ -57,18 +57,26 @@ log_with_timestamp() {
     echo "[$(date -u '+%Y-%m-%d %H:%M:%S UTC')] [$level] $*"
 }
 
-# Fetch all open pull requests
-echo "Fetching open pull requests..."
-PRS_JSON=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-    -H "Accept: application/vnd.github.v3+json" \
-    "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100")
-
-# Check if the API call was successful
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to fetch pull requests${NC}"
-    log_summary "❌ **Failed to fetch pull requests**"
-    exit 1
-fi
+# Fetch all open pull requests with retry logic
+log_with_timestamp "INFO" "Fetching open pull requests..."
+for attempt in 1 2 3; do
+    PRS_JSON=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100")
+    
+    # Check if the API call was successful
+    if [ $? -eq 0 ] && [ -n "$PRS_JSON" ]; then
+        log_with_timestamp "INFO" "Successfully fetched pull requests"
+        break
+    elif [ $attempt -eq 3 ]; then
+        log_with_timestamp "ERROR" "Failed to fetch pull requests after 3 attempts"
+        log_summary "❌ **Failed to fetch pull requests after retries**"
+        exit 1
+    else
+        log_with_timestamp "WARN" "Fetch attempt $attempt failed, retrying..."
+        sleep 2
+    fi
+done
 
 # Count the number of PRs
 PR_COUNT=$(echo "$PRS_JSON" | jq '. | length')
@@ -205,20 +213,23 @@ The merge conflicts in this PR have been automatically resolved by merging the b
 
 Please review the changes and ensure everything is correct before merging."
                 
-                # Add comment with retry logic
+                # Add comment with retry logic and better error handling
                 for attempt in 1 2 3; do
-                    if jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
-                        curl -s -X POST \
+                    COMMENT_RESPONSE=$(jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
+                        curl -s -w "\n%{http_code}" -X POST \
                             -H "Authorization: token $GITHUB_TOKEN" \
                             -H "Accept: application/vnd.github.v3+json" \
                             -H "Content-Type: application/json" \
                             "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                            -d @- > /dev/null; then
+                            -d @-)
+                    HTTP_CODE=$(echo "$COMMENT_RESPONSE" | tail -n1)
+                    if [ "$HTTP_CODE" -eq 201 ]; then
                         log_with_timestamp "INFO" "Successfully posted comment to PR #$PR_NUMBER"
                         break
                     elif [ $attempt -eq 3 ]; then
-                        log_with_timestamp "WARN" "Failed to post comment to PR #$PR_NUMBER after 3 attempts"
+                        log_with_timestamp "WARN" "Failed to post comment to PR #$PR_NUMBER after 3 attempts (HTTP $HTTP_CODE)"
                     else
+                        log_with_timestamp "WARN" "Comment post attempt $attempt failed (HTTP $HTTP_CODE), retrying..."
                         sleep 2
                     fi
                 done
@@ -234,8 +245,12 @@ Please review the changes and ensure everything is correct before merging."
             log_with_timestamp "ERROR" "Automatic merge failed - manual intervention required"
             
             # Get conflict details with better error handling
-            CONFLICT_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null || echo "Unable to determine conflicting files")
-            CONFLICT_COUNT=$(git diff --name-only --diff-filter=U 2>/dev/null | wc -l)
+            if CONFLICT_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null) && [ -n "$CONFLICT_FILES" ]; then
+                CONFLICT_COUNT=$(echo "$CONFLICT_FILES" | wc -l)
+            else
+                CONFLICT_FILES="Unable to determine conflicting files"
+                CONFLICT_COUNT="unknown"
+            fi
             
             log_with_timestamp "ERROR" "Conflicting files ($CONFLICT_COUNT): $CONFLICT_FILES"
             log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Automatic merge failed ($CONFLICT_COUNT conflicting files)"
@@ -256,19 +271,23 @@ $CONFLICT_FILES
 
 Please resolve these conflicts manually."
             
+            # Add a comment to the PR about the failure with retry logic and better error handling
             for attempt in 1 2 3; do
-                if jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
-                    curl -s -X POST \
+                COMMENT_RESPONSE=$(jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
+                    curl -s -w "\n%{http_code}" -X POST \
                         -H "Authorization: token $GITHUB_TOKEN" \
                         -H "Accept: application/vnd.github.v3+json" \
                         -H "Content-Type: application/json" \
                         "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                        -d @- > /dev/null; then
+                        -d @-)
+                HTTP_CODE=$(echo "$COMMENT_RESPONSE" | tail -n1)
+                if [ "$HTTP_CODE" -eq 201 ]; then
                     log_with_timestamp "INFO" "Successfully posted failure comment to PR #$PR_NUMBER"
                     break
                 elif [ $attempt -eq 3 ]; then
-                    log_with_timestamp "WARN" "Failed to post failure comment to PR #$PR_NUMBER after 3 attempts"
+                    log_with_timestamp "WARN" "Failed to post failure comment to PR #$PR_NUMBER after 3 attempts (HTTP $HTTP_CODE)"
                 else
+                    log_with_timestamp "WARN" "Comment post attempt $attempt failed (HTTP $HTTP_CODE), retrying..."
                     sleep 2
                 fi
             done
