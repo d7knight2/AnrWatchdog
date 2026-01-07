@@ -26,21 +26,37 @@ export GITHUB_REPOSITORY="owner/repo"
 - `jq` command available
 
 **Features:**
-- Detects all open pull requests in the repository
-- Identifies PRs with merge conflicts
-- Attempts automatic conflict resolution by merging the base branch
-- Commits and pushes changes if merge is successful
-- Adds comments to PRs about resolution status
-- Logs detailed success/failure information
-- Skips PRs from forks (cannot push to fork branches)
+- **Intelligent PR Detection**: Detects all open pull requests in the repository
+- **Smart Conflict Identification**: Properly handles PRs with merge conflicts, including:
+  - `mergeable: false` - Has conflicts, attempts resolution
+  - `mergeable: null` - GitHub hasn't computed status yet, skips and reports
+  - `mergeable: true` - No conflicts, logs and continues
+- **Automatic Conflict Resolution**: Attempts resolution by merging the base branch
+- **Robust Error Handling**: 
+  - Retry logic for API calls (3 attempts with 2s delays)
+  - Detailed error messages with timestamps
+  - Proper cleanup on failure
+- **Detailed Logging**:
+  - Timestamped log entries with severity levels (INFO, WARN, ERROR, SUCCESS)
+  - Bash debug tracing enabled (set -x)
+  - Comprehensive conflict file detection with counts
+- **Smart Notifications**:
+  - Only takes action when conflicts are detected
+  - Adds comments to PRs about resolution status
+  - Tracks meaningful actions to reduce notification spam
+- **Fork Handling**: Skips PRs from forks (cannot push to fork branches)
 
 **Output:**
-- Console: Detailed progress and results for each PR
+- Console: Detailed timestamped progress and results for each PR
 - `/tmp/conflict-resolution-summary.txt`: Summary report for GitHub Actions
-- GitHub PR comments: Notifications about resolution attempts
+- GitHub PR comments: Notifications about resolution attempts with retry logic
+
+**Exit Codes:**
+- `0`: Success (conflicts resolved or no action needed)
+- `1`: Failure (conflict resolution failed)
 
 **GitHub Actions Integration:**
-This script is automatically run hourly by the `.github/workflows/pr-conflict-resolver.yml` workflow.
+This script is automatically run every 6 hours by the `.github/workflows/pr-conflict-resolver.yml` workflow. The reduced frequency (from hourly to every 6 hours) minimizes notification spam while still providing timely conflict resolution.
 
 **Example Output:**
 ```
@@ -51,16 +67,28 @@ PR Conflict Auto-Resolver
 Repository: owner/repo
 Found 3 open pull request(s)
 
-----------------------------------------
-PR #123: Feature implementation
-Head: feature-branch (abc123)
-Base: main
-Mergeable: false
-⚠️  PR #123 has merge conflicts
-Attempting to resolve conflicts...
-✅ Merge successful!
-✅ Successfully resolved conflicts for PR #123
-============================================
+[2026-01-07 08:00:00 UTC] [INFO] ----------------------------------------
+[2026-01-07 08:00:00 UTC] [INFO] Processing PR #123: Feature implementation
+[2026-01-07 08:00:00 UTC] [INFO] Head: feature-branch (abc123)
+[2026-01-07 08:00:00 UTC] [INFO] Base: main
+[2026-01-07 08:00:00 UTC] [INFO] Mergeable status: false
+[2026-01-07 08:00:00 UTC] [WARN] PR #123 has merge conflicts - attempting resolution
+[2026-01-07 08:00:01 UTC] [INFO] Successfully fetched branch feature-branch
+[2026-01-07 08:00:02 UTC] [INFO] Successfully fetched base branch main
+[2026-01-07 08:00:03 UTC] [INFO] Merging main into feature-branch...
+[2026-01-07 08:00:04 UTC] [SUCCESS] Merge successful for PR #123
+[2026-01-07 08:00:05 UTC] [SUCCESS] Successfully resolved conflicts for PR #123
+
+[2026-01-07 08:00:05 UTC] [INFO] ============================================
+[2026-01-07 08:00:05 UTC] [INFO] Summary
+[2026-01-07 08:00:05 UTC] [INFO] ============================================
+[2026-01-07 08:00:05 UTC] [INFO] Total PRs checked: 3
+[2026-01-07 08:00:05 UTC] [INFO] PRs with null mergeable status: 1
+[2026-01-07 08:00:05 UTC] [INFO] Conflicts detected: 1
+[2026-01-07 08:00:05 UTC] [INFO] Conflicts resolved: 1
+[2026-01-07 08:00:05 UTC] [INFO] Conflicts failed: 0
+[2026-01-07 08:00:05 UTC] [INFO] Meaningful action taken: true
+[2026-01-07 08:00:05 UTC] [INFO] ============================================
 ```
 
 ### upload-to-appetize.sh
