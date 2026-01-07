@@ -6,6 +6,9 @@
 
 set -e
 
+# Enable detailed logging
+set -x
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -15,6 +18,9 @@ NC='\033[0m' # No Color
 # Initialize summary file
 SUMMARY_FILE="/tmp/conflict-resolution-summary.txt"
 > "$SUMMARY_FILE"
+
+# Track if any meaningful action was taken
+MEANINGFUL_ACTION=false
 
 echo "============================================"
 echo "PR Conflict Auto-Resolver"
@@ -42,6 +48,13 @@ echo ""
 # Function to log to both console and summary file
 log_summary() {
     echo "$1" | tee -a "$SUMMARY_FILE"
+}
+
+# Function to log with timestamp
+log_with_timestamp() {
+    local level="$1"
+    shift
+    echo "[$(date -u '+%Y-%m-%d %H:%M:%S UTC')] [$level] $*"
 }
 
 # Fetch all open pull requests
@@ -80,6 +93,7 @@ TOTAL_CHECKED=0
 CONFLICTS_DETECTED=0
 CONFLICTS_RESOLVED=0
 CONFLICTS_FAILED=0
+NULL_MERGEABLE_COUNT=0
 
 # Store the current branch to return to later
 ORIGINAL_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
@@ -97,64 +111,90 @@ for i in $(seq 0 $((PR_COUNT - 1))); do
     
     TOTAL_CHECKED=$((TOTAL_CHECKED + 1))
     
-    echo "----------------------------------------"
-    echo "PR #$PR_NUMBER: $PR_TITLE"
-    echo "Head: $PR_HEAD_REF ($PR_HEAD_SHA)"
-    echo "Base: $PR_BASE_REF"
-    echo "Mergeable: $PR_MERGEABLE"
+    log_with_timestamp "INFO" "----------------------------------------"
+    log_with_timestamp "INFO" "Processing PR #$PR_NUMBER: $PR_TITLE"
+    log_with_timestamp "INFO" "Head: $PR_HEAD_REF ($PR_HEAD_SHA)"
+    log_with_timestamp "INFO" "Base: $PR_BASE_REF"
+    log_with_timestamp "INFO" "Mergeable status: $PR_MERGEABLE"
     
     # Skip if PR is from a fork (we can't push to forks)
     if [ "$PR_HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
-        echo -e "${YELLOW}⚠️  Skipping PR #$PR_NUMBER - from fork: $PR_HEAD_REPO${NC}"
+        log_with_timestamp "WARN" "Skipping PR #$PR_NUMBER - from fork: $PR_HEAD_REPO"
         log_summary "- **PR #$PR_NUMBER**: Skipped (from fork: $PR_HEAD_REPO)"
         echo ""
         continue
     fi
     
-    # Check if PR has conflicts (mergeable is false or null)
+    # Handle null mergeable status - GitHub hasn't computed it yet
+    if [ "$PR_MERGEABLE" == "null" ]; then
+        log_with_timestamp "INFO" "PR #$PR_NUMBER has null mergeable status - GitHub hasn't computed merge status yet"
+        log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ℹ️ Merge status not yet computed (will check on next run)"
+        NULL_MERGEABLE_COUNT=$((NULL_MERGEABLE_COUNT + 1))
+        echo ""
+        continue
+    fi
+    
+    # Check if PR has conflicts (mergeable is false)
     if [ "$PR_MERGEABLE" == "false" ]; then
-        echo -e "${YELLOW}⚠️  PR #$PR_NUMBER has merge conflicts${NC}"
+        log_with_timestamp "WARN" "PR #$PR_NUMBER has merge conflicts - attempting resolution"
         CONFLICTS_DETECTED=$((CONFLICTS_DETECTED + 1))
+        MEANINGFUL_ACTION=true
         
         # Attempt to resolve conflicts
-        echo "Attempting to resolve conflicts for PR #$PR_NUMBER..."
+        log_with_timestamp "INFO" "Attempting to resolve conflicts for PR #$PR_NUMBER..."
         
-        # Fetch the latest changes
-        git fetch origin "$PR_HEAD_REF" || {
-            echo -e "${RED}❌ Failed to fetch branch $PR_HEAD_REF${NC}"
-            log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Failed to fetch branch"
-            CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
-            echo ""
-            continue
-        }
+        # Fetch the latest changes with retry logic
+        for attempt in 1 2 3; do
+            if git fetch origin "$PR_HEAD_REF"; then
+                log_with_timestamp "INFO" "Successfully fetched branch $PR_HEAD_REF"
+                break
+            elif [ $attempt -eq 3 ]; then
+                log_with_timestamp "ERROR" "Failed to fetch branch $PR_HEAD_REF after 3 attempts"
+                log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Failed to fetch branch after retries"
+                CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
+                echo ""
+                continue 2
+            else
+                log_with_timestamp "WARN" "Fetch attempt $attempt failed, retrying..."
+                sleep 2
+            fi
+        done
         
-        git fetch origin "$PR_BASE_REF" || {
-            echo -e "${RED}❌ Failed to fetch base branch $PR_BASE_REF${NC}"
-            log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Failed to fetch base branch"
-            CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
-            echo ""
-            continue
-        }
+        for attempt in 1 2 3; do
+            if git fetch origin "$PR_BASE_REF"; then
+                log_with_timestamp "INFO" "Successfully fetched base branch $PR_BASE_REF"
+                break
+            elif [ $attempt -eq 3 ]; then
+                log_with_timestamp "ERROR" "Failed to fetch base branch $PR_BASE_REF after 3 attempts"
+                log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Failed to fetch base branch after retries"
+                CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
+                echo ""
+                continue 2
+            else
+                log_with_timestamp "WARN" "Fetch attempt $attempt failed, retrying..."
+                sleep 2
+            fi
+        done
         
         # Checkout the PR branch
-        git checkout -B "$PR_HEAD_REF" "origin/$PR_HEAD_REF" || {
-            echo -e "${RED}❌ Failed to checkout branch $PR_HEAD_REF${NC}"
+        if ! git checkout -B "$PR_HEAD_REF" "origin/$PR_HEAD_REF"; then
+            log_with_timestamp "ERROR" "Failed to checkout branch $PR_HEAD_REF"
             log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Failed to checkout branch"
             CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
             echo ""
             continue
-        }
+        fi
         
         # Attempt to merge the base branch
-        echo "Merging $PR_BASE_REF into $PR_HEAD_REF..."
+        log_with_timestamp "INFO" "Merging $PR_BASE_REF into $PR_HEAD_REF..."
         
         if git merge "origin/$PR_BASE_REF" -m "Auto-merge $PR_BASE_REF to resolve conflicts" --no-edit; then
-            echo -e "${GREEN}✅ Merge successful!${NC}"
+            log_with_timestamp "SUCCESS" "Merge successful for PR #$PR_NUMBER"
             
             # Push the changes
-            echo "Pushing changes to $PR_HEAD_REF..."
+            log_with_timestamp "INFO" "Pushing changes to $PR_HEAD_REF..."
             if git push origin "$PR_HEAD_REF"; then
-                echo -e "${GREEN}✅ Successfully resolved conflicts for PR #$PR_NUMBER${NC}"
+                log_with_timestamp "SUCCESS" "Successfully resolved conflicts for PR #$PR_NUMBER"
                 log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ✅ Conflicts resolved automatically"
                 CONFLICTS_RESOLVED=$((CONFLICTS_RESOLVED + 1))
                 
@@ -165,56 +205,77 @@ The merge conflicts in this PR have been automatically resolved by merging the b
 
 Please review the changes and ensure everything is correct before merging."
                 
-                jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
-                curl -s -X POST \
-                    -H "Authorization: token $GITHUB_TOKEN" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    -H "Content-Type: application/json" \
-                    "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                    -d @- > /dev/null
+                # Add comment with retry logic
+                for attempt in 1 2 3; do
+                    if jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
+                        curl -s -X POST \
+                            -H "Authorization: token $GITHUB_TOKEN" \
+                            -H "Accept: application/vnd.github.v3+json" \
+                            -H "Content-Type: application/json" \
+                            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+                            -d @- > /dev/null; then
+                        log_with_timestamp "INFO" "Successfully posted comment to PR #$PR_NUMBER"
+                        break
+                    elif [ $attempt -eq 3 ]; then
+                        log_with_timestamp "WARN" "Failed to post comment to PR #$PR_NUMBER after 3 attempts"
+                    else
+                        sleep 2
+                    fi
+                done
                 
             else
-                echo -e "${RED}❌ Failed to push changes to $PR_HEAD_REF${NC}"
+                log_with_timestamp "ERROR" "Failed to push changes to $PR_HEAD_REF"
                 log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Merge succeeded but push failed"
                 CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
                 # Reset to the original remote state before the merge attempt
                 git reset --hard "origin/$PR_HEAD_REF" 2>/dev/null || true
             fi
         else
-            echo -e "${RED}❌ Automatic merge failed - manual intervention required${NC}"
+            log_with_timestamp "ERROR" "Automatic merge failed - manual intervention required"
             
-            # Get conflict details
-            CONFLICT_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null || echo "Unable to determine")
+            # Get conflict details with better error handling
+            CONFLICT_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null || echo "Unable to determine conflicting files")
+            CONFLICT_COUNT=$(git diff --name-only --diff-filter=U 2>/dev/null | wc -l)
             
-            log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Automatic merge failed (conflicting files: $CONFLICT_FILES)"
+            log_with_timestamp "ERROR" "Conflicting files ($CONFLICT_COUNT): $CONFLICT_FILES"
+            log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ❌ Automatic merge failed ($CONFLICT_COUNT conflicting files)"
             CONFLICTS_FAILED=$((CONFLICTS_FAILED + 1))
             
             # Clean up the failed merge by resetting to HEAD
             git reset --hard HEAD 2>/dev/null || true
             
-            # Add a comment to the PR about the failure using jq to properly escape JSON
+            # Add a comment to the PR about the failure using jq to properly escape JSON with retry logic
             COMMENT_TEXT="🤖 **Automatic Conflict Resolution Failed**
 
 Attempted to automatically resolve merge conflicts by merging the base branch (\`$PR_BASE_REF\`), but the merge failed due to conflicts that require manual resolution.
 
-**Conflicting files:**
+**Conflicting files ($CONFLICT_COUNT):**
 \`\`\`
 $CONFLICT_FILES
 \`\`\`
 
 Please resolve these conflicts manually."
             
-            jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
-            curl -s -X POST \
-                -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Content-Type: application/json" \
-                "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-                -d @- > /dev/null
+            for attempt in 1 2 3; do
+                if jq -n --arg body "$COMMENT_TEXT" '{body: $body}' | \
+                    curl -s -X POST \
+                        -H "Authorization: token $GITHUB_TOKEN" \
+                        -H "Accept: application/vnd.github.v3+json" \
+                        -H "Content-Type: application/json" \
+                        "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+                        -d @- > /dev/null; then
+                    log_with_timestamp "INFO" "Successfully posted failure comment to PR #$PR_NUMBER"
+                    break
+                elif [ $attempt -eq 3 ]; then
+                    log_with_timestamp "WARN" "Failed to post failure comment to PR #$PR_NUMBER after 3 attempts"
+                else
+                    sleep 2
+                fi
+            done
         fi
         
     else
-        echo -e "${GREEN}✓ No conflicts detected${NC}"
+        log_with_timestamp "INFO" "No conflicts detected for PR #$PR_NUMBER"
         log_summary "- **PR #$PR_NUMBER** (${PR_TITLE}): ✓ No conflicts"
     fi
     
@@ -228,27 +289,36 @@ if [ -n "$ORIGINAL_BRANCH" ] && [ "$ORIGINAL_BRANCH" != "HEAD" ]; then
 fi
 
 # Print summary
-echo "============================================"
-echo "Summary"
-echo "============================================"
-echo "Total PRs checked: $TOTAL_CHECKED"
-echo "Conflicts detected: $CONFLICTS_DETECTED"
-echo "Conflicts resolved: $CONFLICTS_RESOLVED"
-echo "Conflicts failed: $CONFLICTS_FAILED"
-echo "============================================"
+log_with_timestamp "INFO" "============================================"
+log_with_timestamp "INFO" "Summary"
+log_with_timestamp "INFO" "============================================"
+log_with_timestamp "INFO" "Total PRs checked: $TOTAL_CHECKED"
+log_with_timestamp "INFO" "PRs with null mergeable status: $NULL_MERGEABLE_COUNT"
+log_with_timestamp "INFO" "Conflicts detected: $CONFLICTS_DETECTED"
+log_with_timestamp "INFO" "Conflicts resolved: $CONFLICTS_RESOLVED"
+log_with_timestamp "INFO" "Conflicts failed: $CONFLICTS_FAILED"
+log_with_timestamp "INFO" "Meaningful action taken: $MEANINGFUL_ACTION"
+log_with_timestamp "INFO" "============================================"
 
 log_summary ""
 log_summary "---"
 log_summary ""
 log_summary "**Summary Statistics:**"
 log_summary "- Total PRs Checked: $TOTAL_CHECKED"
+log_summary "- PRs with null mergeable status: $NULL_MERGEABLE_COUNT"
 log_summary "- Conflicts Detected: $CONFLICTS_DETECTED"
 log_summary "- Conflicts Resolved: $CONFLICTS_RESOLVED"
 log_summary "- Conflicts Failed: $CONFLICTS_FAILED"
 
-# Exit with error if there were failures (but not if we just didn't find conflicts)
+# Determine exit status based on outcomes
 if [ $CONFLICTS_FAILED -gt 0 ]; then
+    log_with_timestamp "ERROR" "Exiting with failure status due to $CONFLICTS_FAILED failed conflict resolutions"
     exit 1
+elif [ "$MEANINGFUL_ACTION" = false ]; then
+    log_with_timestamp "INFO" "No meaningful action taken - no conflicts to resolve"
+    # Exit with special code to indicate no action needed
+    exit 0
+else
+    log_with_timestamp "SUCCESS" "Successfully resolved $CONFLICTS_RESOLVED conflicts"
+    exit 0
 fi
-
-exit 0
