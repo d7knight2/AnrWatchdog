@@ -1,0 +1,56 @@
+name: PR Conflict Auto-Resolver
+
+on:
+  schedule:
+    # Run every 6 hours to reduce notification frequency
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-conflicts:
+    name: Detect and Resolve PR Conflicts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+    - name: Run conflict resolution script
+      id: resolve_conflicts
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        chmod +x scripts/resolve-pr-conflicts.sh
+        ./scripts/resolve-pr-conflicts.sh
+      continue-on-error: false
+        
+    - name: Create workflow summary
+      if: always()
+      run: |
+        echo "## PR Conflict Resolution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f /tmp/conflict-resolution-summary.txt ]; then
+          cat /tmp/conflict-resolution-summary.txt >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ **No summary file generated**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "---" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Workflow Status:** ${{ steps.resolve_conflicts.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Run Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

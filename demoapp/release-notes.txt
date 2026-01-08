@@ -1,0 +1,11 @@
+Nightly build of ANR Watchdog Demo App
+
+This is an automated nightly build containing the latest changes from the main branch.
+
+Features:
+- ANR detection and monitoring
+- Floating debug tool for real-time thread monitoring
+- Memory and CPU utilization tracking
+- Coroutine debugging support
+
+For more information, visit: https://github.com/d7knight2/AnrWatchdog

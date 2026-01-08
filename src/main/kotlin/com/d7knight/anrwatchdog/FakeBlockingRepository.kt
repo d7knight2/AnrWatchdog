@@ -1,23 +1,17 @@
 package com.d7knight.anrwatchdog.blocking
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.debug.DebugProbes
 import com.d7knight.anrwatchdog.network.FakeOkHttpRepository
 import com.d7knight.anrwatchdog.graphics.FakeGlideRepository
 import com.d7knight.anrwatchdog.experimental.ExperimentCheckRepository
 
 object BlockingRxJavaInteroptRepository {
-    init {
-        DebugProbes.install() // Install DebugProbes globally
-        DebugProbes.enableCreationStackTraces = true // Enable capturing of creation stack traces
-    }
-
-    fun performBlockingOperation(index: Int) = runBlocking {
-        launch(Dispatchers.Default + CoroutineName("FakeJob-$index")) {
+    suspend fun performBlockingOperation(index: Int) {
+        withContext(Dispatchers.Default + CoroutineName("FakeJob-$index")) {
             println("Started FakeJob-$index")
             delay(50)
             println("Finished FakeJob-$index")
-        }.join()
+        }
     }
 }
 
@@ -39,9 +33,7 @@ fun main() = runBlocking {
 
     val experimentJob = launch(Dispatchers.Default + CoroutineName("Experiment")) {
         println("Experiment coroutine started")
-        runBlocking {
-            ExperimentCheckRepository.performNonBlockingOperation(4)
-        }
+        ExperimentCheckRepository.performNonBlockingOperation(4)
     }
 
     listOf(mainJob, okhttpJob, glideJob, experimentJob).forEach { it.join() }
