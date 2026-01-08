@@ -98,11 +98,14 @@ Tests memory leak detection integration:
 
 ## Continuous Integration (CI)
 
-The project uses GitHub Actions for CI/CD. See `.github/workflows/android-ci.yml`.
+The project uses GitHub Actions for CI/CD. See `.github/workflows/android-ci.yml` and `.github/workflows/pr-validation.yml`.
 
-### CI Jobs
+### CI Workflows
 
-1. **test**: Runs all unit tests
+#### Pull Request Validation (`.github/workflows/pr-validation.yml`)
+Primary workflow for PR validation with required status checks:
+
+1. **unit-tests**: Runs all unit tests
    - Executes `./gradlew test`
    - Uploads test reports as artifacts
 
@@ -110,16 +113,28 @@ The project uses GitHub Actions for CI/CD. See `.github/workflows/android-ci.yml
    - Executes `./gradlew assembleDebug`
    - Uploads APK as artifact
 
-3. **instrumented-test**: Runs UI/instrumented tests
+3. **ui-tests**: Runs UI/instrumented tests
    - Uses Android emulator (API 29, x86_64)
    - Executes `./gradlew connectedAndroidTest`
    - Uploads test reports as artifacts
+
+4. **all-tests-passed**: Consolidation job
+   - Depends on all previous jobs
+   - Only succeeds if all tests pass
+   - Used as required status check for branch protection
+
+#### Android CI (`.github/workflows/android-ci.yml`)
+Continuous integration workflow for pushes and PRs with similar test coverage.
 
 ### Triggering CI
 
 CI runs automatically on:
 - Pushes to `main`, `develop`, or `copilot/**` branches
 - Pull requests to `main` or `develop` branches
+
+### Branch Protection
+
+All pull requests require passing tests before merge. See [BRANCH_PROTECTION_SETUP.md](BRANCH_PROTECTION_SETUP.md) for configuration details.
 
 ## Test Coverage
 
