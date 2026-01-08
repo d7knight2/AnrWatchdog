@@ -2,6 +2,8 @@ package com.example.demoapp.debug
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -11,6 +13,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.math.abs
 
 /**
@@ -20,6 +23,16 @@ import kotlin.math.abs
  * - Active threads with their names and statuses
  * - Recent main thread blocks
  * - General debug information
+ * - Memory usage over time (used as performance approximation)
+ * - UI interactions
+ * 
+ * Features:
+ * - Draggable
+ * - Collapsible/expandable
+ * - Dark/light mode toggle
+ * - Clear logs button
+ * - Export logs functionality
+ * - Configurable update frequency
  * 
  * The view can be dragged around the screen and toggled between expanded and collapsed states.
  */
@@ -29,6 +42,7 @@ class FloatingDebugView(private val context: Context) {
     private var floatingView: View? = null
     private var parentView: ViewGroup? = null
     private var isExpanded = false
+    private var isDarkMode = true
     private var initialX = 0f
     private var initialY = 0f
     private var initialTouchX = 0f
@@ -36,12 +50,30 @@ class FloatingDebugView(private val context: Context) {
     
     private lateinit var contentLayout: LinearLayout
     private lateinit var toggleButton: Button
+    private lateinit var mainLayout: LinearLayout
+    private lateinit var buttonBar: LinearLayout
+    private lateinit var themeButton: Button
+    
+    // Configurable update frequency (milliseconds)
+    var updateFrequency: Long = 2000
+        set(value) {
+            field = value.coerceAtLeast(500)
+        }
     
     // Constants for UI dimensions and touch handling
     private companion object {
         const val CONTENT_WIDTH = 800
         const val CONTENT_HEIGHT = 600
         const val TOUCH_THRESHOLD = 10
+    }
+    
+    // Calculate minimum touch size based on actual device density (48dp)
+    private val minTouchSize: Int by lazy {
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            48f,
+            context.resources.displayMetrics
+        ).toInt()
     }
     
     /**
@@ -84,34 +116,107 @@ class FloatingDebugView(private val context: Context) {
     fun updateDebugInfo() {
         if (!isExpanded || floatingView == null) return
         
+        // Update CPU usage
+        updateCpuUsage()
+        
         // Clear previous content
         contentLayout.removeAllViews()
         
         // Add section titles and data
         addSection("Active Threads", getActiveThreadsText())
         addSection("Recent Main Thread Blocks", getMainThreadBlocksText())
+        addSection("Memory Usage Over Time", getMemoryUsageText())
+        addSection("Recent UI Interactions", getUiInteractionsText())
         addSection("General Debug Info", getGeneralDebugInfoText())
     }
     
+    private fun updateCpuUsage() {
+        // Get memory usage as performance indicator
+        val runtime = Runtime.getRuntime()
+        val usedMemory = (runtime.totalMemory() - runtime.freeMemory()).toFloat()
+        val maxMemory = runtime.maxMemory().toFloat()
+        val memoryUsagePercent = (usedMemory / maxMemory * 100).coerceIn(0f, 100f)
+        
+        // Record memory usage (not actual CPU, but useful as performance proxy)
+        DebugInfoCollector.recordCpuUsage(memoryUsagePercent)
+    }
+    
     private fun createFloatingView(): View {
-        val layout = LinearLayout(context).apply {
+        mainLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xCC000000.toInt())
+            setBackgroundColor(getBackgroundColor())
             setPadding(16, 16, 16, 16)
             elevation = 10f
         }
         
-        // Toggle button
+        // Toggle button with larger touch target
         toggleButton = Button(context).apply {
             text = "Debug Tool 🔧"
-            setTextColor(0xFFFFFFFF.toInt())
+            setTextColor(Color.WHITE)
             setBackgroundColor(0xFF2196F3.toInt())
-            setPadding(20, 10, 20, 10)
+            val padding = 20
+            setPadding(padding, padding, padding, padding)
+            minHeight = minTouchSize
+            minWidth = minTouchSize * 2
             setOnClickListener {
                 toggleExpanded()
             }
         }
-        layout.addView(toggleButton)
+        mainLayout.addView(toggleButton)
+        
+        // Button bar for actions (initially hidden)
+        buttonBar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            visibility = View.GONE
+        }
+        
+        // Clear button
+        val clearButton = Button(context).apply {
+            text = "Clear"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(0xFFE53935.toInt())
+            setPadding(15, 15, 15, 15)
+            minHeight = minTouchSize
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = 8
+            }
+            setOnClickListener {
+                clearAllLogs()
+            }
+        }
+        buttonBar.addView(clearButton)
+        
+        // Theme toggle button
+        themeButton = Button(context).apply {
+            text = if (isDarkMode) "☀️" else "🌙"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(0xFF757575.toInt())
+            setPadding(15, 15, 15, 15)
+            minHeight = minTouchSize
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = 8
+            }
+            setOnClickListener {
+                toggleTheme()
+            }
+        }
+        buttonBar.addView(themeButton)
+        
+        // Export button
+        val exportButton = Button(context).apply {
+            text = "Export"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(0xFF43A047.toInt())
+            setPadding(15, 15, 15, 15)
+            minHeight = minTouchSize
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener {
+                exportLogs()
+            }
+        }
+        buttonBar.addView(exportButton)
+        
+        mainLayout.addView(buttonBar)
         
         // Content layout (initially hidden)
         contentLayout = LinearLayout(context).apply {
@@ -126,14 +231,14 @@ class FloatingDebugView(private val context: Context) {
             )
             addView(contentLayout)
         }
-        layout.addView(scrollView)
+        mainLayout.addView(scrollView)
         
         // Add touch listener for dragging
-        layout.setOnTouchListener { view, event ->
+        mainLayout.setOnTouchListener { view, event ->
             handleTouch(view, event)
         }
         
-        return layout
+        return mainLayout
     }
     
     private fun handleTouch(view: View, event: MotionEvent): Boolean {
@@ -165,10 +270,50 @@ class FloatingDebugView(private val context: Context) {
     private fun toggleExpanded() {
         isExpanded = !isExpanded
         contentLayout.visibility = if (isExpanded) View.VISIBLE else View.GONE
+        buttonBar.visibility = if (isExpanded) View.VISIBLE else View.GONE
         toggleButton.text = if (isExpanded) "Debug Tool 🔧 ▼" else "Debug Tool 🔧 ▶"
         
         if (isExpanded) {
             updateDebugInfo()
+        }
+    }
+    
+    private fun toggleTheme() {
+        isDarkMode = !isDarkMode
+        mainLayout.setBackgroundColor(getBackgroundColor())
+        // Update theme button to show opposite mode (sun in dark mode, moon in light mode)
+        themeButton.text = if (isDarkMode) "☀️" else "🌙"
+        updateDebugInfo()
+    }
+    
+    private fun getBackgroundColor(): Int {
+        return if (isDarkMode) 0xCC000000.toInt() else 0xCCFFFFFF.toInt()
+    }
+    
+    private fun getTextColor(): Int {
+        return if (isDarkMode) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
+    }
+    
+    private fun getTitleColor(): Int {
+        return if (isDarkMode) 0xFF4CAF50.toInt() else 0xFF2E7D32.toInt()
+    }
+    
+    private fun getDividerColor(): Int {
+        return if (isDarkMode) 0xFF555555.toInt() else 0xFFCCCCCC.toInt()
+    }
+    
+    private fun clearAllLogs() {
+        DebugInfoCollector.clearAllLogs()
+        Toast.makeText(context, "All debug logs cleared", Toast.LENGTH_SHORT).show()
+        updateDebugInfo()
+    }
+    
+    private fun exportLogs() {
+        val file = DebugInfoCollector.exportLogsToFile(context)
+        if (file != null) {
+            Toast.makeText(context, "Logs exported to ${file.name}", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(context, "Failed to export logs", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -177,7 +322,7 @@ class FloatingDebugView(private val context: Context) {
         val titleView = TextView(context).apply {
             text = title
             textSize = 16f
-            setTextColor(0xFF4CAF50.toInt())
+            setTextColor(getTitleColor())
             setPadding(0, 20, 0, 10)
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
@@ -187,7 +332,7 @@ class FloatingDebugView(private val context: Context) {
         val contentView = TextView(context).apply {
             text = content
             textSize = 12f
-            setTextColor(0xFFFFFFFF.toInt())
+            setTextColor(getTextColor())
             setPadding(10, 0, 0, 0)
         }
         contentLayout.addView(contentView)
@@ -201,7 +346,7 @@ class FloatingDebugView(private val context: Context) {
                 topMargin = 10
                 bottomMargin = 10
             }
-            setBackgroundColor(0xFF555555.toInt())
+            setBackgroundColor(getDividerColor())
         }
         contentLayout.addView(divider)
     }
@@ -243,6 +388,30 @@ class FloatingDebugView(private val context: Context) {
         val info = DebugInfoCollector.getGeneralDebugInfo()
         return info.entries.joinToString("\n") { (key, value) ->
             "$key: $value"
+        }
+    }
+    
+    private fun getMemoryUsageText(): String {
+        val history = DebugInfoCollector.getCpuUsageHistory()
+        return if (history.isEmpty()) {
+            "No memory data available yet"
+        } else {
+            val recent = history.takeLast(10)
+            recent.joinToString("\n") { snapshot ->
+                "${DebugInfoCollector.formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% memory (${snapshot.totalThreads} threads)"
+            }
+        }
+    }
+    
+    private fun getUiInteractionsText(): String {
+        val interactions = DebugInfoCollector.getUiInteractions()
+        return if (interactions.isEmpty()) {
+            "No UI interactions recorded"
+        } else {
+            interactions.takeLast(10).joinToString("\n") { interaction ->
+                val details = if (interaction.details.isNotEmpty()) " - ${interaction.details}" else ""
+                "${DebugInfoCollector.formatTimestamp(interaction.timestamp)}: ${interaction.type} at (${String.format("%.0f", interaction.x)}, ${String.format("%.0f", interaction.y)})$details"
+            }
         }
     }
 }
