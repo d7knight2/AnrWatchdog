@@ -41,7 +41,7 @@ Branch protection rules must be configured through the GitHub web interface by a
 
 ### Step 1: Access Branch Protection Settings
 
-1. Navigate to your repository on GitHub: `https://github.com/d7knight2/AnrWatchdog`
+1. Navigate to your repository on GitHub: `https://github.com/<owner>/<repository>` (replace with your repository URL)
 2. Click on **Settings** (top navigation bar)
 3. In the left sidebar, click **Branches** (under "Code and automation")
 4. Under "Branch protection rules", click **Add rule** or **Add branch protection rule**

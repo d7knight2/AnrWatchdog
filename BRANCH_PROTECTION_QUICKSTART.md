@@ -12,7 +12,7 @@ The repository includes a workflow specifically designed for PR validation:
 
 ### For Main Branch
 
-1. Go to: `https://github.com/d7knight2/AnrWatchdog/settings/branches`
+1. Go to: `https://github.com/<owner>/<repository>/settings/branches` (replace with your repository)
 2. Click **"Add rule"**
 3. Branch name pattern: `main`
 4. Enable these checkboxes:
