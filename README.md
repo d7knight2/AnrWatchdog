@@ -116,8 +116,18 @@ This project includes comprehensive test coverage:
 - **Unit tests** for the ANRWatchdog library
 - **Instrumented UI tests** for the demo app (ANR simulation, memory leaks, UI interactions)
 - **Continuous Integration** via GitHub Actions
+- **Branch Protection**: All PRs require passing tests before merge
 
 See [TESTING.md](TESTING.md) for detailed information on running tests and CI configuration.
+
+## Branch Protection & PR Validation
+
+All pull requests to `main` and `develop` branches automatically run comprehensive tests including:
+- Unit tests (JUnit)
+- UI/Instrumented tests (Espresso)
+- Build validation
+
+PRs cannot be merged until all tests pass. See [BRANCH_PROTECTION_SETUP.md](BRANCH_PROTECTION_SETUP.md) for detailed setup instructions and configuration.
 
 ## App Distribution
 
