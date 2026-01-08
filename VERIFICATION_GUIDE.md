@@ -111,16 +111,25 @@ To verify that failing tests actually block merging:
 # Create a branch with a failing test
 git checkout -b test/failing-test
 
-# Modify a test to fail (example)
-cat >> anrwatchdog/src/test/kotlin/com/example/anrwatchdog/ANRWatchdogTest.kt << 'EOF'
+# Create a simple test file with a failing test
+cat > test_failing.kt << 'EOF'
+package com.example.anrwatchdog
 
+import org.junit.Test
+import kotlin.test.assertEquals
+
+class VerificationFailTest {
     @Test
     fun testFailureForVerification() {
-        // This test will fail
-        assertEquals(1, 2)
+        // This test intentionally fails for verification
+        assertEquals(1, 2, "Expected failure for CI verification")
     }
 }
 EOF
+
+# Move it to the test directory
+mkdir -p anrwatchdog/src/test/kotlin/com/example/anrwatchdog
+mv test_failing.kt anrwatchdog/src/test/kotlin/com/example/anrwatchdog/VerificationFailTest.kt
 
 git add .
 git commit -m "Test: Add failing test to verify CI blocking"
@@ -201,7 +210,7 @@ git push origin --delete test/failing-test  # if created
 **Problem**: Tests succeed on developer machine but fail in GitHub Actions.
 
 **Common Causes**:
-- Java/JDK version differences (CI uses JDK 17)
+- Java/JDK version differences (CI uses JDK 17 as configured in workflow files)
 - Android SDK version differences
 - Timezone or locale differences
 - Missing dependencies or environment variables
