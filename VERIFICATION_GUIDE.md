@@ -59,7 +59,7 @@ Verify:
 
 Follow the instructions in `BRANCH_PROTECTION_QUICKSTART.md`:
 
-1. Navigate to: `https://github.com/d7knight2/AnrWatchdog/settings/branches`
+1. Navigate to: `https://github.com/<owner>/<repository>/settings/branches` (replace with your repository)
 2. Add rule for `main`:
    - Branch name pattern: `main`
    - ☑️ Require a pull request before merging
