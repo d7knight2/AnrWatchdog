@@ -1,0 +1,310 @@
+name: Nightly Merge Conflict Resolver
+
+on:
+  schedule:
+    # Run every night at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      pr_limit:
+        description: 'Maximum number of PRs to process'
+        required: false
+        default: '100'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  resolve-conflicts:
+    name: Resolve Merge Conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email \
+            "github-actions[bot]@users.noreply.github.com"
+
+      - name: Find Pull Requests with Conflicts
+        id: find-prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching all open pull requests..."
+
+          # Use workflow input or default to 100
+          PR_LIMIT="${{ github.event.inputs.pr_limit || '100' }}"
+          echo "PR limit: $PR_LIMIT"
+
+          # Get all open PRs
+          gh pr list --state open \
+            --json number,headRefName,baseRefName,mergeable \
+            --limit "$PR_LIMIT" > prs.json
+
+          # Filter PRs with conflicts (mergeable: CONFLICTING)
+          CONFLICTING_PRS=$(cat prs.json | \
+            jq -r '.[] | select(.mergeable == "CONFLICTING") | .number' | \
+            tr '\n' ' ')
+
+          if [ -z "$CONFLICTING_PRS" ]; then
+            echo "No pull requests with conflicts found."
+            echo "has_conflicts=false" >> $GITHUB_OUTPUT
+            echo "pr_numbers=" >> $GITHUB_OUTPUT
+          else
+            echo "Found PRs with conflicts: $CONFLICTING_PRS"
+            echo "has_conflicts=true" >> $GITHUB_OUTPUT
+            echo "pr_numbers=$CONFLICTING_PRS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Resolve Conflicts
+        if: steps.find-prs.outputs.has_conflicts == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the default branch for fallback
+          DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef \
+            --jq '.defaultBranchRef.name')
+          echo "Repository default branch: $DEFAULT_BRANCH"
+
+          # Create summary file
+          SUMMARY_FILE="conflict_resolution_summary.md"
+          echo "# Merge Conflict Resolution Summary" > $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+          echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" \
+            >> $SUMMARY_FILE
+          echo "**Workflow Run:** [${{ github.run_id }}]\
+          (${{ github.server_url }}/${{ github.repository }}/actions/runs/\
+          ${{ github.run_id }})" >> $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+
+          SUCCESS_COUNT=0
+          FAILURE_COUNT=0
+          SKIPPED_COUNT=0
+
+          # Process each PR with conflicts
+          for PR_NUMBER in ${{ steps.find-prs.outputs.pr_numbers }}; do
+            echo "========================================="
+            echo "Processing PR #$PR_NUMBER"
+            echo "========================================="
+
+            # Get PR details
+            PR_DATA=$(gh pr view $PR_NUMBER \
+              --json headRefName,baseRefName,title,author)
+            HEAD_BRANCH=$(echo "$PR_DATA" | jq -r '.headRefName')
+            BASE_BRANCH=$(echo "$PR_DATA" | jq -r '.baseRefName')
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login')
+
+            echo "PR #$PR_NUMBER: $PR_TITLE"
+            echo "Author: $PR_AUTHOR"
+            echo "Branch: $HEAD_BRANCH -> $BASE_BRANCH"
+
+            # Add PR to summary
+            echo "## PR #$PR_NUMBER: $PR_TITLE" >> $SUMMARY_FILE
+            echo "**Author:** @$PR_AUTHOR" >> $SUMMARY_FILE
+            echo "**Branch:** \`$HEAD_BRANCH\` → \`$BASE_BRANCH\`" \
+              >> $SUMMARY_FILE
+            echo "" >> $SUMMARY_FILE
+
+            # Fetch and checkout the PR branch
+            echo "Fetching branches..."
+            git fetch origin "$HEAD_BRANCH:$HEAD_BRANCH" || {
+              echo "❌ Failed to fetch branch $HEAD_BRANCH"
+              echo "**Status:** ❌ Failed - Could not fetch branch" \
+                >> $SUMMARY_FILE
+              echo "**Error:** Failed to fetch branch from remote" \
+                >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              continue
+            }
+
+            git fetch origin "$BASE_BRANCH:$BASE_BRANCH" || {
+              echo "❌ Failed to fetch base branch $BASE_BRANCH"
+              echo "**Status:** ❌ Failed - Could not fetch base branch" \
+                >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              continue
+            }
+
+            # Checkout the head branch
+            git checkout "$HEAD_BRANCH" || {
+              echo "❌ Failed to checkout branch $HEAD_BRANCH"
+              echo "**Status:** ❌ Failed - Could not checkout branch" \
+                >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              continue
+            }
+
+            # Attempt to merge the base branch
+            echo "Attempting to merge $BASE_BRANCH into $HEAD_BRANCH..."
+
+            # Try automatic merge with default strategy
+            MERGE_MSG="Auto-resolve merge conflicts from $BASE_BRANCH"
+            if git merge "origin/$BASE_BRANCH" -m "$MERGE_MSG"; then
+              echo "✅ Merge successful without conflicts!"
+
+              # Push the changes
+              if git push origin "$HEAD_BRANCH"; then
+                echo "✅ Successfully pushed resolved changes for \
+                PR #$PR_NUMBER"
+                echo "**Status:** ✅ Success - Conflicts resolved \
+                automatically" >> $SUMMARY_FILE
+                echo "" >> $SUMMARY_FILE
+
+                # Add comment to PR
+                COMMENT_BODY="🤖 **Automated Merge Conflict Resolution**
+
+          The nightly merge conflict resolver has successfully resolved \
+          conflicts in this pull request by merging the latest changes \
+          from \`$BASE_BRANCH\`.
+
+          **Resolution Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Workflow Run:** [${{ github.run_id }}]\
+          (${{ github.server_url }}/${{ github.repository }}/actions/runs/\
+          ${{ github.run_id }})
+
+          Please review the changes to ensure the automatic resolution \
+          is correct."
+
+                if ! gh pr comment $PR_NUMBER --body "$COMMENT_BODY"; then
+                  echo "⚠️  Warning: Failed to add comment to PR #$PR_NUMBER"
+                fi
+
+                SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+              else
+                echo "❌ Failed to push changes"
+                echo "**Status:** ❌ Failed - Could not push changes" \
+                  >> $SUMMARY_FILE
+                echo "**Error:** Failed to push resolved changes to remote" \
+                  >> $SUMMARY_FILE
+                echo "" >> $SUMMARY_FILE
+                FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              fi
+            else
+              # Merge failed - conflicts need manual resolution
+              echo "❌ Automatic merge failed - manual resolution required"
+
+              # Get conflicting files before aborting
+              CONFLICTING_FILES=$(git diff --name-only --diff-filter=U \
+                2>/dev/null | tr '\n' ',' | sed 's/,$//' || echo "Unable to determine")
+
+              # Capture merge output for logging
+              git merge "origin/$BASE_BRANCH" --no-commit --no-ff \
+                2>&1 | tee merge_output.log || true
+
+              # Abort the merge
+              git merge --abort 2>/dev/null || true
+
+              echo "Conflicting files: $CONFLICTING_FILES"
+
+              echo "**Status:** ⚠️  Failed - Manual resolution required" \
+                >> $SUMMARY_FILE
+              echo "**Conflicting Files:** \`$CONFLICTING_FILES\`" \
+                >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              echo "<details>" >> $SUMMARY_FILE
+              echo "<summary>Merge Output</summary>" >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              echo "\`\`\`" >> $SUMMARY_FILE
+              cat merge_output.log >> $SUMMARY_FILE 2>/dev/null || \
+                echo "No merge output available" >> $SUMMARY_FILE
+              echo "\`\`\`" >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+              echo "</details>" >> $SUMMARY_FILE
+              echo "" >> $SUMMARY_FILE
+
+              # Add comment to PR about failure
+              COMMENT_BODY="🤖 **Automated Merge Conflict Resolution - \
+          Manual Action Required**
+
+          The nightly merge conflict resolver attempted to resolve conflicts \
+          in this pull request but was unable to do so automatically.
+
+          **Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Base Branch:** \`$BASE_BRANCH\`
+          **Status:** ⚠️  Manual resolution required
+
+          **Conflicting Files:**
+          \`\`\`
+          $CONFLICTING_FILES
+          \`\`\`
+
+          **Next Steps:**
+          1. Pull the latest changes from \`$BASE_BRANCH\`
+          2. Manually resolve the conflicts in the files listed above
+          3. Commit and push your changes
+
+          **Workflow Run:** [${{ github.run_id }}]\
+          (${{ github.server_url }}/${{ github.repository }}/actions/runs/\
+          ${{ github.run_id }})"
+
+              if ! gh pr comment $PR_NUMBER --body "$COMMENT_BODY"; then
+                echo "⚠️  Warning: Failed to add comment to PR #$PR_NUMBER"
+              fi
+
+              FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            fi
+
+            # Reset to clean state for next PR
+            git checkout "$DEFAULT_BRANCH" 2>/dev/null || true
+            git reset --hard HEAD
+
+            echo ""
+          done
+
+          # Add summary statistics
+          echo "---" >> $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+          echo "## Summary Statistics" >> $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+          echo "- ✅ **Successfully Resolved:** $SUCCESS_COUNT" \
+            >> $SUMMARY_FILE
+          echo "- ❌ **Failed to Resolve:** $FAILURE_COUNT" >> $SUMMARY_FILE
+          echo "- **Total Processed:** $((SUCCESS_COUNT + FAILURE_COUNT))" \
+            >> $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
+
+          # Output summary to GitHub Actions summary
+          cat $SUMMARY_FILE >> $GITHUB_STEP_SUMMARY
+
+          # Save for artifact
+          mkdir -p logs
+          cp $SUMMARY_FILE logs/
+
+          echo "Resolution complete!"
+          echo "Successfully resolved: $SUCCESS_COUNT"
+          echo "Failed to resolve: $FAILURE_COUNT"
+
+      - name: Create Summary for No Conflicts
+        if: steps.find-prs.outputs.has_conflicts == 'false'
+        run: |
+          echo "## Merge Conflict Resolution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ No pull requests with conflicts found" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All open pull requests are in a clean state with no \
+          merge conflicts." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Resolution Logs
+        if: always() && steps.find-prs.outputs.has_conflicts == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: merge-conflict-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
