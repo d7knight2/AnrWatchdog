@@ -20,6 +20,8 @@ ls -la .github/workflows/android-ci.yml
 
 Expected: Both files should exist and be readable.
 
+**Note**: `pr-validation.yml` is the primary workflow for PR validation and branch protection. `android-ci.yml` continues to provide CI coverage for pushes.
+
 ### Step 2: Validate Workflow Syntax
 
 The workflow syntax should be valid YAML:
@@ -35,6 +37,8 @@ yamllint .github/workflows/android-ci.yml
 ```
 
 Expected: No errors should be reported.
+
+**Note**: While both workflows are validated here, `pr-validation.yml` is the critical one for branch protection.
 
 ### Step 3: Review Workflow Configuration
 
@@ -105,14 +109,22 @@ While the workflow is running or after completion:
 
 ### Step 8: Test with Failing Tests (Optional)
 
-To verify that failing tests actually block merging:
+To verify that failing tests actually block merging, create a branch with a failing test:
 
 ```bash
 # Create a branch with a failing test
 git checkout -b test/failing-test
 
-# Create a simple test file with a failing test
-cat > test_failing.kt << 'EOF'
+# Create the test directory if it doesn't exist
+mkdir -p anrwatchdog/src/test/kotlin/com/example/anrwatchdog
+
+# Create a test file with a failing test
+# (You can use your editor or the commands below)
+```
+
+Create a file `anrwatchdog/src/test/kotlin/com/example/anrwatchdog/VerificationFailTest.kt` with:
+
+```kotlin
 package com.example.anrwatchdog
 
 import org.junit.Test
@@ -125,12 +137,11 @@ class VerificationFailTest {
         assertEquals(1, 2, "Expected failure for CI verification")
     }
 }
-EOF
+```
 
-# Move it to the test directory
-mkdir -p anrwatchdog/src/test/kotlin/com/example/anrwatchdog
-mv test_failing.kt anrwatchdog/src/test/kotlin/com/example/anrwatchdog/VerificationFailTest.kt
+Then commit and push:
 
+```bash
 git add .
 git commit -m "Test: Add failing test to verify CI blocking"
 git push origin test/failing-test
