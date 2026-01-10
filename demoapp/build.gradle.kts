@@ -41,5 +41,5 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")
     androidTestImplementation("androidx.test:rules:1.5.0")
-    androidTestImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
+    androidTestImplementation("org.jetbrains.kotlin:kotlin-test:2.3.0")
 }
