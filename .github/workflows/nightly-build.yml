@@ -118,3 +118,7 @@ jobs:
         
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**APK Location:** \`demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk\`" >> $GITHUB_STEP_SUMMARY
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
