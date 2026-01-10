@@ -29,7 +29,7 @@ configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
 dependencies {
     implementation(project(":anrwatchdog"))
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
     
     // Firebase dependencies
