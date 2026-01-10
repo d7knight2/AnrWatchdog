@@ -43,7 +43,7 @@ A GitHub Actions workflow that:
 
 **Activation**: Automatically runs when a comment is posted on a PR that:
 - Contains "FlyCI Wingman" in the text
-- Includes code blocks marked as ````diff` or ````patch`
+- Includes code blocks marked as ```diff` or ```patch`
 
 **Permissions Required**:
 - `contents: write` - To commit and push changes
