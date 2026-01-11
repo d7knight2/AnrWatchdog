@@ -96,7 +96,7 @@ module.exports = (app) => {
       // Post error comment
       try {
         const errorCommentBody = `❌ **Error applying FlyCI Wingman fixes**
-          
+
 An unexpected error occurred while trying to apply the suggested fixes:
 \`\`\`
 ${error.message}
