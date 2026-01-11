@@ -95,11 +95,7 @@ module.exports = (app) => {
       
       // Post error comment
       try {
-        await context.octokit.issues.createComment({
-          owner: repository.owner.login,
-          repo: repository.name,
-          issue_number: issue.number,
-          body: `❌ **Error applying FlyCI Wingman fixes**
+        const errorCommentBody = `❌ **Error applying FlyCI Wingman fixes**
           
 An unexpected error occurred while trying to apply the suggested fixes:
 \`\`\`
@@ -108,8 +104,18 @@ ${error.message}
 
 Please try applying the changes manually or contact support if the issue persists.
 
-Original comment: ${comment.html_url}`,
+Original comment: ${comment.html_url}`;
+
+        app.log.debug(`Attempting to post error comment on PR #${issue.number}: ${errorCommentBody}`);
+        
+        await context.octokit.issues.createComment({
+          owner: repository.owner.login,
+          repo: repository.name,
+          issue_number: issue.number,
+          body: errorCommentBody,
         });
+        
+        app.log.info(`Successfully posted error comment on PR #${issue.number}`);
       } catch (commentError) {
         app.log.error('Failed to post error comment:', commentError);
       }
@@ -276,18 +282,28 @@ Original comment: ${comment.html_url}`,
   async function postSuccessComment(context, issueNumber, commentUrl) {
     const { repository } = context.payload;
 
-    await context.octokit.issues.createComment({
-      owner: repository.owner.login,
-      repo: repository.name,
-      issue_number: issueNumber,
-      body: `✅ **FlyCI Wingman fixes applied successfully!**
+    const commentBody = `✅ **FlyCI Wingman fixes applied successfully!**
 
 The suggested fixes have been automatically applied and committed to this PR.
 
 🔄 CI checks will run automatically to verify the fixes.
 
-Original suggestion: ${commentUrl}`,
-    });
+Original suggestion: ${commentUrl}`;
+
+    app.log.debug(`Attempting to post success comment on PR #${issueNumber}: ${commentBody}`);
+
+    try {
+      await context.octokit.issues.createComment({
+        owner: repository.owner.login,
+        repo: repository.name,
+        issue_number: issueNumber,
+        body: commentBody,
+      });
+      app.log.info(`Successfully posted success comment on PR #${issueNumber}`);
+    } catch (error) {
+      app.log.error(`Failed to post success comment on PR #${issueNumber}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -296,11 +312,7 @@ Original suggestion: ${commentUrl}`,
   async function postFailureComment(context, issueNumber, commentUrl, error) {
     const { repository } = context.payload;
 
-    await context.octokit.issues.createComment({
-      owner: repository.owner.login,
-      repo: repository.name,
-      issue_number: issueNumber,
-      body: `⚠️ **Failed to apply FlyCI Wingman fixes**
+    const commentBody = `⚠️ **Failed to apply FlyCI Wingman fixes**
 
 The suggested patch could not be applied automatically. This might be due to:
 - Conflicts with recent changes in the PR
@@ -315,8 +327,22 @@ ${commentUrl}
 You can also try:
 1. Pulling the latest changes from the PR branch
 2. Manually applying the suggested changes
-3. Committing and pushing to trigger CI again`,
-    });
+3. Committing and pushing to trigger CI again`;
+
+    app.log.debug(`Attempting to post failure comment on PR #${issueNumber}: ${commentBody}`);
+
+    try {
+      await context.octokit.issues.createComment({
+        owner: repository.owner.login,
+        repo: repository.name,
+        issue_number: issueNumber,
+        body: commentBody,
+      });
+      app.log.info(`Successfully posted failure comment on PR #${issueNumber}`);
+    } catch (commentError) {
+      app.log.error(`Failed to post failure comment on PR #${issueNumber}:`, commentError);
+      throw commentError;
+    }
   }
 
   /**
@@ -325,11 +351,7 @@ You can also try:
   async function postNoPatchesComment(context, issueNumber, commentUrl) {
     const { repository } = context.payload;
 
-    await context.octokit.issues.createComment({
-      owner: repository.owner.login,
-      repo: repository.name,
-      issue_number: issueNumber,
-      body: `ℹ️ **No patches found to apply**
+    const commentBody = `ℹ️ **No patches found to apply**
 
 The comment was recognized as a FlyCI Wingman suggestion, but no valid diff/patch blocks were found.
 
@@ -344,7 +366,21 @@ or
 ... patch content ...
 \`\`\`
 
-Original comment: ${commentUrl}`,
-    });
+Original comment: ${commentUrl}`;
+
+    app.log.debug(`Attempting to post no-patches comment on PR #${issueNumber}: ${commentBody}`);
+
+    try {
+      await context.octokit.issues.createComment({
+        owner: repository.owner.login,
+        repo: repository.name,
+        issue_number: issueNumber,
+        body: commentBody,
+      });
+      app.log.info(`Successfully posted no-patches comment on PR #${issueNumber}`);
+    } catch (commentError) {
+      app.log.error(`Failed to post no-patches comment on PR #${issueNumber}:`, commentError);
+      throw commentError;
+    }
   }
 };
