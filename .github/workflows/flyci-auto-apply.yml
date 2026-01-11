@@ -20,8 +20,27 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
+      issues: write
     
     steps:
+    - name: Log webhook context
+      run: |
+        echo "::group::Webhook Event Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Action: ${{ github.event.action }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Issue Number: ${{ github.event.issue.number }}"
+        echo "Comment Author: ${{ github.event.comment.user.login }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "::endgroup::"
+        echo "::group::Permissions"
+        echo "This workflow has the following permissions:"
+        echo "  - contents: write"
+        echo "  - pull-requests: write"
+        echo "  - actions: write"
+        echo "  - issues: write"
+        echo "::endgroup::"
+    
     - name: Get PR details
       id: pr
       uses: actions/github-script@v7
