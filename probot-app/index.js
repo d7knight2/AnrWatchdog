@@ -106,7 +106,7 @@ Please try applying the changes manually or contact support if the issue persist
 
 Original comment: ${comment.html_url}`;
 
-        app.log.debug(`Attempting to post error comment on PR #${issue.number}: ${errorCommentBody}`);
+        app.log.debug(`Attempting to post error comment on PR #${issue.number}. Comment preview: ${errorCommentBody.substring(0, 100)}...`);
         
         await context.octokit.issues.createComment({
           owner: repository.owner.login,
@@ -290,7 +290,7 @@ The suggested fixes have been automatically applied and committed to this PR.
 
 Original suggestion: ${commentUrl}`;
 
-    app.log.debug(`Attempting to post success comment on PR #${issueNumber}: ${commentBody}`);
+    app.log.debug(`Attempting to post success comment on PR #${issueNumber}. Comment preview: ${commentBody.substring(0, 100)}...`);
 
     try {
       await context.octokit.issues.createComment({
@@ -329,7 +329,7 @@ You can also try:
 2. Manually applying the suggested changes
 3. Committing and pushing to trigger CI again`;
 
-    app.log.debug(`Attempting to post failure comment on PR #${issueNumber}: ${commentBody}`);
+    app.log.debug(`Attempting to post failure comment on PR #${issueNumber}. Comment preview: ${commentBody.substring(0, 100)}...`);
 
     try {
       await context.octokit.issues.createComment({
@@ -368,7 +368,7 @@ or
 
 Original comment: ${commentUrl}`;
 
-    app.log.debug(`Attempting to post no-patches comment on PR #${issueNumber}: ${commentBody}`);
+    app.log.debug(`Attempting to post no-patches comment on PR #${issueNumber}. Comment preview: ${commentBody.substring(0, 100)}...`);
 
     try {
       await context.octokit.issues.createComment({
