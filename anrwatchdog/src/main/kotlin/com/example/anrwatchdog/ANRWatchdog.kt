@@ -1,7 +1,8 @@
 package com.example.anrwatchdog
 
 import android.app.Application
-import android.util.Log
+// Deliberate compilation error: removed required import
+// import android.util.Log
 import kotlinx.coroutines.debug.DebugProbes
 
 class ANRWatchdog private constructor(private val application: Application) {
