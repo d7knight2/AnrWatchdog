@@ -76,7 +76,7 @@ runs:
           echo ""
           
           # Try HTTPS first
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 || echo "000")
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 https://api.flyci.net 2>/dev/null || echo "000")
           
           echo "HTTPS Response Status: $HTTP_STATUS"
           echo ""
@@ -89,12 +89,12 @@ runs:
             
             # Additional detailed check with verbose output
             echo "Detailed connection information:"
-            curl -s -I --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 | head -20 || true
+            curl -s -I --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 || true
             echo ""
             echo "✅ Connection to FlyCI API verified successfully"
           else
             echo "⚠️  HTTPS connection failed, trying HTTP..."
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 http://api.flyci.net 2>&1 || echo "000")
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 http://api.flyci.net 2>/dev/null || echo "000")
             echo "HTTP Response Status: $HTTP_STATUS"
             echo ""
             
