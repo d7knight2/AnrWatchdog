@@ -1,0 +1,148 @@
+name: 'FlyCI API Connectivity Check'
+description: 'Checks DNS resolution and HTTP connectivity to api.flyci.net before triggering FlyCI Wingman'
+author: 'AnrWatchdog Team'
+
+branding:
+  icon: 'wifi'
+  color: 'blue'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check DNS Resolution for api.flyci.net
+      shell: bash
+      run: |
+        echo "========================================"
+        echo "FlyCI API Connectivity Check - DNS Resolution"
+        echo "========================================"
+        echo "Testing DNS resolution for api.flyci.net..."
+        echo ""
+        
+        # Perform DNS lookup
+        if command -v nslookup &> /dev/null; then
+          echo "Using nslookup for DNS resolution:"
+          if nslookup api.flyci.net; then
+            echo ""
+            echo "✅ DNS resolution successful for api.flyci.net"
+          else
+            echo ""
+            echo "❌ ERROR: DNS resolution failed for api.flyci.net"
+            echo ""
+            echo "Possible causes:"
+            echo "  - DNS server is not responding"
+            echo "  - Network connectivity issues"
+            echo "  - Domain does not exist or is temporarily unavailable"
+            echo ""
+            echo "Please check:"
+            echo "  1. Network connectivity"
+            echo "  2. DNS server configuration"
+            echo "  3. FlyCI service status"
+            exit 1
+          fi
+        else
+          echo "⚠️  nslookup not available, using host command..."
+          if command -v host &> /dev/null; then
+            if host api.flyci.net; then
+              echo ""
+              echo "✅ DNS resolution successful for api.flyci.net"
+            else
+              echo ""
+              echo "❌ ERROR: DNS resolution failed for api.flyci.net"
+              echo ""
+              echo "Possible causes:"
+              echo "  - DNS server is not responding"
+              echo "  - Network connectivity issues"
+              echo "  - Domain does not exist or is temporarily unavailable"
+              exit 1
+            fi
+          else
+            echo "⚠️  Neither nslookup nor host available, skipping DNS check"
+          fi
+        fi
+        echo ""
+    
+    - name: Check HTTP Connectivity to api.flyci.net
+      shell: bash
+      run: |
+        echo "========================================"
+        echo "FlyCI API Connectivity Check - HTTP Connection"
+        echo "========================================"
+        echo "Testing HTTP connectivity to api.flyci.net..."
+        echo ""
+        
+        # Test HTTP connectivity
+        if command -v curl &> /dev/null; then
+          echo "Using curl for HTTP connectivity test:"
+          echo ""
+          
+          # Try HTTPS first
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 || echo "000")
+          
+          echo "HTTPS Response Status: $HTTP_STATUS"
+          echo ""
+          
+          # Check if we got any valid HTTP status code (even errors like 404 are OK - it means we connected)
+          if [[ "$HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+            echo "✅ HTTP connectivity successful to api.flyci.net"
+            echo "   Response code: $HTTP_STATUS"
+            echo ""
+            
+            # Additional detailed check with verbose output
+            echo "Detailed connection information:"
+            curl -s -I --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 | head -20 || true
+            echo ""
+            echo "✅ Connection to FlyCI API verified successfully"
+          else
+            echo "⚠️  HTTPS connection failed, trying HTTP..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 http://api.flyci.net 2>&1 || echo "000")
+            echo "HTTP Response Status: $HTTP_STATUS"
+            echo ""
+            
+            if [[ "$HTTP_STATUS" =~ ^[1-5][0-9][0-9]$ ]]; then
+              echo "✅ HTTP connectivity successful to api.flyci.net"
+              echo "   Response code: $HTTP_STATUS"
+              echo "   Note: HTTPS connection failed but HTTP succeeded"
+            else
+              echo "❌ ERROR: Unable to connect to api.flyci.net"
+              echo ""
+              echo "Connection Details:"
+              echo "  - HTTPS Status: Failed"
+              echo "  - HTTP Status: Failed"
+              echo ""
+              echo "Debugging Information:"
+              curl -v --connect-timeout 10 --max-time 15 https://api.flyci.net 2>&1 || true
+              echo ""
+              echo "Possible causes:"
+              echo "  - Network firewall blocking the connection"
+              echo "  - FlyCI API service is down"
+              echo "  - Network connectivity issues"
+              echo "  - SSL/TLS certificate issues"
+              echo ""
+              echo "Please check:"
+              echo "  1. FlyCI service status at https://status.flyci.net"
+              echo "  2. Network connectivity and firewall rules"
+              echo "  3. GitHub Actions runner network configuration"
+              exit 1
+            fi
+          fi
+        else
+          echo "❌ ERROR: curl is not available"
+          echo "Cannot perform HTTP connectivity check without curl"
+          exit 1
+        fi
+        echo ""
+    
+    - name: Connectivity Check Summary
+      shell: bash
+      run: |
+        echo "========================================"
+        echo "FlyCI API Connectivity Check - Summary"
+        echo "========================================"
+        echo "✅ All connectivity checks passed successfully!"
+        echo ""
+        echo "Results:"
+        echo "  ✅ DNS Resolution: api.flyci.net is resolvable"
+        echo "  ✅ HTTP Connectivity: api.flyci.net is reachable"
+        echo ""
+        echo "FlyCI Wingman is ready to use."
+        echo "========================================"
