@@ -36,6 +36,10 @@ jobs:
         path: |
           **/build/reports/tests/**
           **/build/test-results/**
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
 
   build:
     name: Build APK
@@ -63,6 +67,10 @@ jobs:
       with:
         name: debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
 
   instrumented-test:
     name: Run Instrumented Tests
@@ -105,3 +113,7 @@ jobs:
         path: |
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1

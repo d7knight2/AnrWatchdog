@@ -1,0 +1,36 @@
+{
+  "name": "flyci-wingman-auto-apply",
+  "version": "1.0.0",
+  "description": "GitHub App to automatically apply FlyCI Wingman suggested fixes to pull requests",
+  "author": "AnrWatchdog Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/d7knight2/AnrWatchdog.git"
+  },
+  "homepage": "https://github.com/d7knight2/AnrWatchdog",
+  "bugs": "https://github.com/d7knight2/AnrWatchdog/issues",
+  "keywords": [
+    "probot",
+    "github",
+    "probot-app",
+    "flyci",
+    "wingman",
+    "automation"
+  ],
+  "scripts": {
+    "start": "probot run ./index.js",
+    "dev": "nodemon --exec \"probot run ./index.js\"",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "probot": "^12.3.1",
+    "simple-git": "^3.19.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">= 18.0.0"
+  }
+}
