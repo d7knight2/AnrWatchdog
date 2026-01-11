@@ -1,0 +1,26 @@
+{
+  "name": "FlyCI Wingman Auto-Apply",
+  "url": "https://github.com/d7knight2/AnrWatchdog",
+  "hook_attributes": {
+    "url": "https://your-app-domain.com/webhook"
+  },
+  "redirect_url": "https://your-app-domain.com/setup",
+  "callback_urls": [
+    "https://your-app-domain.com/auth/callback"
+  ],
+  "setup_url": "https://your-app-domain.com/setup",
+  "description": "Automatically applies FlyCI Wingman suggested fixes to pull requests",
+  "public": false,
+  "default_events": [
+    "issue_comment",
+    "pull_request"
+  ],
+  "default_permissions": {
+    "contents": "write",
+    "issues": "write",
+    "pull_requests": "write",
+    "actions": "write",
+    "metadata": "read"
+  },
+  "webhook_active": true
+}

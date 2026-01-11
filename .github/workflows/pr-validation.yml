@@ -39,6 +39,10 @@ jobs:
         path: |
           **/build/reports/tests/**
           **/build/test-results/**
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
 
   # Job 2: Build the application
   build:
@@ -67,6 +71,10 @@ jobs:
       with:
         name: pr-debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
 
   # Job 3: Run UI/Instrumented tests
   ui-tests:
@@ -110,6 +118,10 @@ jobs:
         path: |
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
 
   # Job 4: All tests passed - this job depends on all other jobs
   # This single job can be used as the required status check

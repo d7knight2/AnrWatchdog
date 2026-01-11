@@ -173,3 +173,7 @@ jobs:
         name: appetize-apk-${{ github.sha }}
         path: ${{ steps.discover_apk.outputs.apk_path }}
         retention-days: 30
+    
+    - name: FlyCI Wingman
+      if: failure()
+      uses: fly-ci/wingman-action@v1
