@@ -13,6 +13,8 @@ object DependencyAnalyzerV3 {
 
     fun dump() {
         println("----- Dependency Analyzer Dump Start -----")
+        // Deliberate compilation error: calling non-existent method
+        dependencies.nonExistentMethod()
         dependencies.forEach { println(it) }
         println("----- Dependency Analyzer Dump End -----")
     }

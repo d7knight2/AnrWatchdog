@@ -131,6 +131,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchTab(index: Int) {
         currentTab = index
+        // Deliberate compilation error: undefined variable
+        val undefinedVariable = nonExistentVariable
         supportFragmentManager.commit {
             replace(container.id, TabFragment.newInstance(tabNames[index]))
         }
