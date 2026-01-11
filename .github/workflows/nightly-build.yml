@@ -135,6 +135,10 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**APK Location:** \`demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk\`" >> $GITHUB_STEP_SUMMARY
     
+    - name: Check FlyCI API Connectivity
+      if: always()
+      uses: ./.github/actions/flyci-connectivity-check
+    
     - name: FlyCI Wingman
       if: always()
       uses: fly-ci/wingman-action@v1

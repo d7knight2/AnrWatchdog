@@ -188,6 +188,10 @@ jobs:
         path: ${{ steps.discover_apk.outputs.apk_path }}
         retention-days: 30
     
+    - name: Check FlyCI API Connectivity
+      if: always()
+      uses: ./.github/actions/flyci-connectivity-check
+    
     - name: FlyCI Wingman
       if: always()
       uses: fly-ci/wingman-action@v1

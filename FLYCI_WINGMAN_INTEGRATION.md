@@ -8,7 +8,34 @@ FlyCI Wingman has been integrated into all GitHub Actions CI workflows to provid
 
 ## What's Been Integrated
 
-### 1. CI Workflows with FlyCI Wingman
+### 1. API Connectivity Check
+
+Before triggering FlyCI Wingman, all workflows now include a connectivity check to ensure reliable network access to `api.flyci.net`. This enhancement provides:
+
+- **DNS Resolution Check**: Verifies that `api.flyci.net` resolves correctly using `nslookup`
+- **HTTP Connectivity Check**: Tests connectivity via `curl` with HTTPS/HTTP fallback
+- **Fail-Fast Behavior**: Stops execution immediately with clear error messages if connectivity issues are detected
+- **Detailed Logging**: Provides comprehensive debugging information including DNS lookup results and API response status
+
+The connectivity check is implemented as a reusable composite action located at `.github/actions/flyci-connectivity-check/action.yml` and is integrated before every FlyCI Wingman step:
+
+```yaml
+- name: Check FlyCI API Connectivity
+  if: always()
+  uses: ./.github/actions/flyci-connectivity-check
+
+- name: FlyCI Wingman
+  if: always()
+  uses: fly-ci/wingman-action@v1
+```
+
+**Benefits:**
+- Catches connectivity issues early in the workflow
+- Provides actionable debug information when failures occur
+- Reduces troubleshooting time by identifying network issues immediately
+- Improves developer experience with clear, informative error messages
+
+### 2. CI Workflows with FlyCI Wingman
 
 The following workflows have been updated to include FlyCI Wingman:
 
@@ -37,7 +64,7 @@ The workflows that handle pull requests have been configured with security best 
 - **Contributor validation**: PR workflows include validation steps (currently permissive but can be restricted)
 - **Debug logging**: All workflows log context information for troubleshooting
 
-### 2. Automated Fix Application
+### 3. Automated Fix Application
 
 Two automation solutions have been provided to automatically apply Wingman's suggested fixes:
 
@@ -197,6 +224,38 @@ diff --git a/src/main/java/com/example/Calculator.java b/src/main/java/com/examp
 5. Build succeeds
 
 ## Troubleshooting
+
+### API Connectivity Issues
+
+**Symptoms**:
+- Workflow fails at "Check FlyCI API Connectivity" step
+- Error message: "DNS resolution failed for api.flyci.net"
+- Error message: "Unable to connect to api.flyci.net"
+
+**Possible Causes**:
+- FlyCI API service is down or experiencing issues
+- Network connectivity problems in GitHub Actions runner
+- DNS server configuration issues
+- Firewall or network policies blocking access
+
+**Solutions**:
+1. **Check FlyCI Service Status**: Visit https://status.flyci.net (if available) to verify service health
+2. **Review Workflow Logs**: Check the detailed connectivity check output for specific error messages
+3. **DNS Troubleshooting**:
+   - Check if DNS resolution is working for other domains
+   - Verify DNS server is responding (shown in nslookup output)
+4. **Network Troubleshooting**:
+   - Review curl verbose output in the logs
+   - Check if HTTP or HTTPS connections are being blocked
+   - Verify no network policies are preventing outbound connections
+5. **Retry the Workflow**: Temporary network issues may resolve themselves
+6. **Contact Support**: If the issue persists, contact FlyCI support or repository administrators
+
+**Debug Information Available**:
+- DNS lookup results (server address, resolved IPs)
+- HTTP response status codes
+- Detailed curl connection information
+- Timing information for connection attempts
 
 ### Patches Not Being Applied
 

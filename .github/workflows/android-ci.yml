@@ -61,6 +61,10 @@ jobs:
           **/build/reports/tests/**
           **/build/test-results/**
     
+    - name: Check FlyCI API Connectivity
+      if: always()
+      uses: ./.github/actions/flyci-connectivity-check
+    
     - name: FlyCI Wingman
       if: always()
       uses: fly-ci/wingman-action@v1
@@ -109,6 +113,10 @@ jobs:
       with:
         name: debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
+    
+    - name: Check FlyCI API Connectivity
+      if: always()
+      uses: ./.github/actions/flyci-connectivity-check
     
     - name: FlyCI Wingman
       if: always()
@@ -173,6 +181,10 @@ jobs:
         path: |
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
+    
+    - name: Check FlyCI API Connectivity
+      if: always()
+      uses: ./.github/actions/flyci-connectivity-check
     
     - name: FlyCI Wingman
       if: always()
