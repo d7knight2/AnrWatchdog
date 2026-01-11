@@ -110,6 +110,8 @@ permissions:
 
 **Rationale**: This step provides a hook for implementing custom contributor validation logic. Currently permissive (allows all), but can be easily modified to restrict workflow execution to trusted users or organization members.
 
+**Important Note**: The current implementation is intentionally permissive to allow contributions from all users while providing the infrastructure for future restrictions. This is a deliberate design decision that balances openness with the ability to add restrictions if needed. Repository maintainers should evaluate whether additional restrictions are necessary based on their security requirements.
+
 **Example Restriction** (for future use):
 ```yaml
 - name: Validate Contributor
@@ -170,11 +172,13 @@ permissions:
 - **Jobs Modified**: upload-to-appetize
 - **Security Level**: Medium (triggered by push to main, not by PRs)
 - **FlyCI Wingman**: Enabled
+- **Permissions Note**: Previously had job-level `contents: read` permission. Changed to workflow-level `contents: write, pull-requests: write, issues: write` to enable FlyCI Wingman functionality. While this grants broader permissions, it's necessary for FlyCI Wingman to comment on failures and create issues.
 
 ### nightly-build.yml
 - **Jobs Modified**: build-and-distribute
 - **Security Level**: Medium (triggered by schedule/manual, not by PRs)
 - **FlyCI Wingman**: Enabled
+- **Permissions Note**: Added workflow-level permissions for FlyCI Wingman functionality.
 
 ## Testing and Validation
 
