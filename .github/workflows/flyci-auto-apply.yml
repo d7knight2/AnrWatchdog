@@ -49,13 +49,20 @@ jobs:
       env:
         COMMENT_BODY: ${{ github.event.comment.body }}
       run: |
-        echo "Extracting patches from Wingman comment..."
+        echo "============================================"
+        echo "Starting FlyCI Wingman patch extraction..."
+        echo "============================================"
+        echo "Comment ID: ${{ github.event.comment.id }}"
+        echo "Comment URL: ${{ github.event.comment.html_url }}"
+        echo "Comment Author: ${{ github.event.comment.user.login }}"
+        echo ""
         
         # Create temporary directory for patches
         mkdir -p /tmp/flyci-patches
         
         # Extract diff/patch blocks from the comment
         # This handles both ```diff and ```patch code blocks
+        echo "Extracting patch blocks from comment body..."
         echo "$COMMENT_BODY" | awk '
           /```(diff|patch)/ { in_block=1; next }
           /```/ && in_block { in_block=0; next }
@@ -64,36 +71,112 @@ jobs:
         
         # Check if we extracted any patches
         if [ ! -s /tmp/flyci-patches/combined.patch ]; then
-          echo "No patches found in comment"
+          echo "❌ No patches found in comment"
+          echo "Comment body length: ${#COMMENT_BODY} characters"
+          echo "Searched for: \`\`\`diff or \`\`\`patch blocks"
           echo "has_patches=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
-        echo "Patches extracted successfully"
-        echo "Patch content:"
-        cat /tmp/flyci-patches/combined.patch
+        # Log patch extraction statistics
+        PATCH_SIZE=$(wc -c < /tmp/flyci-patches/combined.patch)
+        PATCH_LINES=$(wc -l < /tmp/flyci-patches/combined.patch)
+        PATCH_BLOCKS=$(echo "$COMMENT_BODY" | grep -c '```\(diff\|patch\)' || echo "0")
+        
+        echo "✅ Patch extraction successful!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 Patch Statistics:"
+        echo "  • Total patch blocks found: $PATCH_BLOCKS"
+        echo "  • Combined patch size: $PATCH_SIZE bytes"
+        echo "  • Total lines in patch: $PATCH_LINES"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "📝 Patch content preview (first 50 lines):"
+        echo "-------------------------------------------"
+        head -n 50 /tmp/flyci-patches/combined.patch
+        echo "-------------------------------------------"
+        echo ""
         
         # Configure git
+        echo "⚙️  Configuring git..."
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        echo "Git configured successfully"
+        echo ""
         
-        # Try to apply the patch
+        # Validate and apply the patch
+        echo "🔍 Validating patch before application..."
+        VALIDATE_START=$(date +%s)
+        
         if git apply --check /tmp/flyci-patches/combined.patch 2>&1; then
-          echo "Patch validation successful, applying..."
-          git apply /tmp/flyci-patches/combined.patch
+          VALIDATE_END=$(date +%s)
+          VALIDATE_TIME=$((VALIDATE_END - VALIDATE_START))
           
-          # Check if there are changes to commit
-          if git diff --quiet; then
-            echo "No changes after applying patch"
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "✅ Patch validation successful! (took ${VALIDATE_TIME}s)"
+          echo ""
+          echo "📦 Applying patch to working directory..."
+          APPLY_START=$(date +%s)
+          
+          if git apply /tmp/flyci-patches/combined.patch 2>&1; then
+            APPLY_END=$(date +%s)
+            APPLY_TIME=$((APPLY_END - APPLY_START))
+            echo "✅ Patch applied successfully! (took ${APPLY_TIME}s)"
+            echo ""
+            
+            # Check git status for changes
+            echo "🔎 Checking for changes in working directory..."
+            git --no-pager status --short
+            
+            # Get detailed change statistics
+            FILES_CHANGED=$(git diff --name-only | wc -l)
+            LINES_ADDED=$(git diff --numstat | awk '{sum+=$1} END {print sum}')
+            LINES_REMOVED=$(git diff --numstat | awk '{sum+=$2} END {print sum}')
+            
+            if git diff --quiet; then
+              echo "⚠️  No changes detected after applying patch"
+              echo "This may indicate the patch was already applied or is empty"
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "📊 Change Statistics:"
+              echo "  • Files changed: $FILES_CHANGED"
+              echo "  • Lines added: $LINES_ADDED"
+              echo "  • Lines removed: $LINES_REMOVED"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo ""
+              echo "📋 Modified files:"
+              git diff --name-only | sed 's/^/  • /'
+              echo ""
+              echo "✅ Changes ready to commit"
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+              echo "has_patches=true" >> $GITHUB_OUTPUT
+              echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+              echo "lines_added=$LINES_ADDED" >> $GITHUB_OUTPUT
+              echo "lines_removed=$LINES_REMOVED" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "Changes detected, will commit"
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "❌ Failed to apply patch (git apply command failed)"
+            echo "patch_failed=true" >> $GITHUB_OUTPUT
             echo "has_patches=true" >> $GITHUB_OUTPUT
+            exit 1
           fi
         else
-          echo "Patch application failed, trying with --reject to see details..."
+          VALIDATE_END=$(date +%s)
+          VALIDATE_TIME=$((VALIDATE_END - VALIDATE_START))
+          
+          echo "❌ Patch validation failed! (took ${VALIDATE_TIME}s)"
+          echo ""
+          echo "🔍 Detailed error output:"
+          echo "-------------------------------------------"
+          git apply --check /tmp/flyci-patches/combined.patch 2>&1 || true
+          echo "-------------------------------------------"
+          echo ""
+          echo "🔧 Attempting to apply with --reject to see conflicts..."
           git apply --reject /tmp/flyci-patches/combined.patch 2>&1 || true
+          echo ""
+          echo "📁 Checking for .rej files (conflict markers)..."
+          find . -name "*.rej" -exec echo "  • {}" \; -exec head -20 {} \; 2>/dev/null || echo "  No .rej files found"
+          echo ""
           echo "patch_failed=true" >> $GITHUB_OUTPUT
           echo "has_patches=true" >> $GITHUB_OUTPUT
           exit 1
@@ -102,14 +185,44 @@ jobs:
     - name: Commit and push changes
       if: steps.apply_patches.outputs.has_changes == 'true'
       run: |
+        echo "============================================"
+        echo "Committing and pushing changes..."
+        echo "============================================"
+        echo ""
+        
+        COMMIT_START=$(date +%s)
+        
         git add -A
         git commit -m "Apply FlyCI Wingman suggested fixes
         
         Automatically applied fixes suggested by FlyCI Wingman.
         Original comment: ${{ github.event.comment.html_url }}"
         
+        COMMIT_END=$(date +%s)
+        COMMIT_TIME=$((COMMIT_END - COMMIT_START))
+        
+        echo "✅ Changes committed (took ${COMMIT_TIME}s)"
+        echo ""
+        echo "📊 Commit details:"
+        git --no-pager log -1 --stat
+        echo ""
+        
+        PUSH_START=$(date +%s)
+        echo "📤 Pushing to branch: ${{ steps.pr.outputs.ref }}"
+        
         git push origin ${{ steps.pr.outputs.ref }}
-        echo "Changes committed and pushed successfully"
+        
+        PUSH_END=$(date +%s)
+        PUSH_TIME=$((PUSH_END - PUSH_START))
+        
+        echo "✅ Changes pushed successfully! (took ${PUSH_TIME}s)"
+        echo ""
+        echo "🎉 Summary:"
+        echo "  • Files changed: ${{ steps.apply_patches.outputs.files_changed }}"
+        echo "  • Lines added: ${{ steps.apply_patches.outputs.lines_added }}"
+        echo "  • Lines removed: ${{ steps.apply_patches.outputs.lines_removed }}"
+        echo "  • Total time: $((COMMIT_TIME + PUSH_TIME))s"
+        echo "============================================"
     
     - name: Trigger workflow re-run
       if: steps.apply_patches.outputs.has_changes == 'true'

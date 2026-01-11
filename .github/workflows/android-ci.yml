@@ -26,7 +26,36 @@ jobs:
       run: chmod +x gradlew
       
     - name: Run unit tests
+      id: unit_tests
       run: ./gradlew test --stacktrace
+      
+    - name: Log test results summary
+      if: always()
+      run: |
+        echo "============================================"
+        echo "📊 Unit Test Results Summary"
+        echo "============================================"
+        
+        # Find and summarize test results
+        if find . -name "TEST-*.xml" -type f | grep -q .; then
+          TOTAL_TESTS=$(find . -name "TEST-*.xml" -exec grep -h "tests=" {} \; | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          FAILED_TESTS=$(find . -name "TEST-*.xml" -exec grep -h "failures=" {} \; | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          ERROR_TESTS=$(find . -name "TEST-*.xml" -exec grep -h "errors=" {} \; | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          SKIPPED_TESTS=$(find . -name "TEST-*.xml" -exec grep -h "skipped=" {} \; | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          
+          echo "  • Total tests run: ${TOTAL_TESTS:-0}"
+          echo "  • Failed: ${FAILED_TESTS:-0}"
+          echo "  • Errors: ${ERROR_TESTS:-0}"
+          echo "  • Skipped: ${SKIPPED_TESTS:-0}"
+          echo "  • Passed: $((${TOTAL_TESTS:-0} - ${FAILED_TESTS:-0} - ${ERROR_TESTS:-0} - ${SKIPPED_TESTS:-0}))"
+        else
+          echo "  ⚠️  No test result XML files found"
+        fi
+        
+        echo ""
+        echo "Test report locations:"
+        find . -name "TEST-*.xml" -type f | head -5 | sed 's/^/  • /'
+        echo "============================================"
       
     - name: Upload test reports
       if: always()
@@ -36,6 +65,26 @@ jobs:
         path: |
           **/build/reports/tests/**
           **/build/test-results/**
+    
+    - name: Log Wingman trigger context
+      if: failure()
+      run: |
+        echo "============================================"
+        echo "🤖 FlyCI Wingman Analysis Triggered"
+        echo "============================================"
+        echo "Reason: Unit tests failed"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Job: ${{ github.job }}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run Number: ${{ github.run_number }}"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        echo ""
+        echo "Context for Wingman analysis:"
+        echo "  • Failed step: unit_tests"
+        echo "  • Test reports available at: **/build/reports/tests/**"
+        echo "  • Check this workflow run for detailed error messages"
+        echo "============================================"
     
     - name: FlyCI Wingman
       if: failure()
@@ -60,13 +109,56 @@ jobs:
       run: chmod +x gradlew
       
     - name: Build debug APK
+      id: build_apk
       run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Log build results summary
+      if: always()
+      run: |
+        echo "============================================"
+        echo "📦 Build Results Summary"
+        echo "============================================"
+        
+        # Check for APK outputs
+        if find demoapp/build/outputs/apk/debug -name "*.apk" -type f 2>/dev/null | grep -q .; then
+          echo "✅ APK files generated:"
+          find demoapp/build/outputs/apk/debug -name "*.apk" -type f | while read apk; do
+            SIZE=$(du -h "$apk" | cut -f1)
+            echo "  • $(basename "$apk") - $SIZE"
+          done
+        else
+          echo "❌ No APK files found"
+        fi
+        
+        echo ""
+        echo "Build output location: demoapp/build/outputs/apk/debug/"
+        echo "============================================"
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
+    
+    - name: Log Wingman trigger context
+      if: failure()
+      run: |
+        echo "============================================"
+        echo "🤖 FlyCI Wingman Analysis Triggered"
+        echo "============================================"
+        echo "Reason: Build failed"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Job: ${{ github.job }}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run Number: ${{ github.run_number }}"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        echo ""
+        echo "Context for Wingman analysis:"
+        echo "  • Failed step: build_apk"
+        echo "  • Build output location: demoapp/build/outputs/"
+        echo "  • Check this workflow run for detailed error messages"
+        echo "============================================"
     
     - name: FlyCI Wingman
       if: failure()
@@ -97,6 +189,7 @@ jobs:
         sudo udevadm trigger --name-match=kvm
         
     - name: Run instrumented tests
+      id: instrumented_tests
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
@@ -104,6 +197,32 @@ jobs:
         arch: x86_64
         profile: Nexus 6
         script: ./gradlew connectedAndroidTest --stacktrace
+        
+    - name: Log instrumented test results summary
+      if: always()
+      run: |
+        echo "============================================"
+        echo "📊 Instrumented Test Results Summary"
+        echo "============================================"
+        
+        # Find and summarize instrumented test results
+        if find . -path "**/androidTest-results/**/*.xml" -type f | grep -q .; then
+          TOTAL_TESTS=$(find . -path "**/androidTest-results/**/*.xml" -exec grep -h "tests=" {} \; | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          FAILED_TESTS=$(find . -path "**/androidTest-results/**/*.xml" -exec grep -h "failures=" {} \; | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          ERROR_TESTS=$(find . -path "**/androidTest-results/**/*.xml" -exec grep -h "errors=" {} \; | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s}')
+          
+          echo "  • Total tests run: ${TOTAL_TESTS:-0}"
+          echo "  • Failed: ${FAILED_TESTS:-0}"
+          echo "  • Errors: ${ERROR_TESTS:-0}"
+          echo "  • Passed: $((${TOTAL_TESTS:-0} - ${FAILED_TESTS:-0} - ${ERROR_TESTS:-0}))"
+        else
+          echo "  ⚠️  No instrumented test result XML files found"
+        fi
+        
+        echo ""
+        echo "Test report locations:"
+        find . -path "**/androidTest-results/**/*.xml" -type f | head -5 | sed 's/^/  • /'
+        echo "============================================"
         
     - name: Upload instrumented test reports
       if: always()
@@ -113,6 +232,27 @@ jobs:
         path: |
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
+    
+    - name: Log Wingman trigger context
+      if: failure()
+      run: |
+        echo "============================================"
+        echo "🤖 FlyCI Wingman Analysis Triggered"
+        echo "============================================"
+        echo "Reason: Instrumented tests failed"
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Job: ${{ github.job }}"
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run Number: ${{ github.run_number }}"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        echo ""
+        echo "Context for Wingman analysis:"
+        echo "  • Failed step: instrumented_tests"
+        echo "  • Test reports available at: **/build/reports/androidTests/**"
+        echo "  • Emulator config: API 29, Nexus 6, x86_64"
+        echo "  • Check this workflow run for detailed error messages"
+        echo "============================================"
     
     - name: FlyCI Wingman
       if: failure()
