@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   test:
     name: Run Tests
@@ -37,8 +42,19 @@ jobs:
           **/build/reports/tests/**
           **/build/test-results/**
     
+    - name: Log workflow context
+      if: always()
+      run: |
+        echo "::group::Workflow Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Job Status: ${{ job.status }}"
+        echo "::endgroup::"
+    
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
 
   build:
@@ -68,8 +84,19 @@ jobs:
         name: debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
     
+    - name: Log workflow context
+      if: always()
+      run: |
+        echo "::group::Workflow Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Job Status: ${{ job.status }}"
+        echo "::endgroup::"
+    
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
 
   instrumented-test:
@@ -114,6 +141,17 @@ jobs:
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
     
+    - name: Log workflow context
+      if: always()
+      run: |
+        echo "::group::Workflow Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Job Status: ${{ job.status }}"
+        echo "::endgroup::"
+    
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1

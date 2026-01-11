@@ -5,12 +5,15 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allow manual triggering
 
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   upload-to-appetize:
     name: Build and Upload APK to Appetize.io
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     
     steps:
     - name: Checkout code
@@ -174,6 +177,17 @@ jobs:
         path: ${{ steps.discover_apk.outputs.apk_path }}
         retention-days: 30
     
+    - name: Log workflow context
+      if: always()
+      run: |
+        echo "::group::Workflow Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Job Status: ${{ job.status }}"
+        echo "::endgroup::"
+    
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1

@@ -6,6 +6,11 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch: # Allow manual triggering
 
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   build-and-distribute:
     name: Build and Distribute Nightly APK
@@ -119,6 +124,17 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**APK Location:** \`demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk\`" >> $GITHUB_STEP_SUMMARY
     
+    - name: Log workflow context
+      if: always()
+      run: |
+        echo "::group::Workflow Context"
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Job Status: ${{ job.status }}"
+        echo "::endgroup::"
+    
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
