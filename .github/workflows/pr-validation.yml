@@ -38,7 +38,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.base_ref }}
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -90,7 +90,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.base_ref }}
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -139,7 +139,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.base_ref }}
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4

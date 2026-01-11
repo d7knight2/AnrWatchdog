@@ -6,6 +6,9 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch: # Allow manual triggering
 
+# Permissions required for FlyCI Wingman to comment on workflow failures
+# Even though this workflow doesn't run on PRs, FlyCI Wingman needs write
+# permissions to post comments and issues when failures occur
 permissions:
   contents: write
   pull-requests: write
