@@ -5,14 +5,27 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allow manual triggering
 
+# Permissions required for FlyCI Wingman to comment on workflow failures
+# Even though this workflow doesn't run on PRs, FlyCI Wingman needs write
+# permissions to post comments and issues when failures occur
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   upload-to-appetize:
     name: Build and Upload APK to Appetize.io
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     
     steps:
+    - name: Debug - Log Context
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Repository: ${{ github.repository }}"
+    
     - name: Checkout code
       uses: actions/checkout@v4
       
@@ -175,5 +188,5 @@ jobs:
         retention-days: 30
     
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1

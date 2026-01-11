@@ -6,12 +6,27 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch: # Allow manual triggering
 
+# Permissions required for FlyCI Wingman to comment on workflow failures
+# Even though this workflow doesn't run on PRs, FlyCI Wingman needs write
+# permissions to post comments and issues when failures occur
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
 jobs:
   build-and-distribute:
     name: Build and Distribute Nightly APK
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug - Log Context
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Repository: ${{ github.repository }}"
+    
     - name: Checkout code
       uses: actions/checkout@v4
       
@@ -120,5 +135,5 @@ jobs:
         echo "**APK Location:** \`demoapp/build/outputs/apk/debug/anrwatchdog-demo-nightly-${{ steps.timestamp.outputs.timestamp }}.apk\`" >> $GITHUB_STEP_SUMMARY
     
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1

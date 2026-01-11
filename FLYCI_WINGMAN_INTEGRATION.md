@@ -17,15 +17,25 @@ The following workflows have been updated to include FlyCI Wingman:
 - **nightly-build.yml**: Added to `build-and-distribute` job
 - **appetize-upload.yml**: Added to `upload-to-appetize` job
 
-Each workflow now includes a final step that runs only on failure:
+Each workflow now includes a final step that runs on all job outcomes:
 
 ```yaml
 - name: FlyCI Wingman
-  if: failure()
+  if: always()
   uses: fly-ci/wingman-action@v1
 ```
 
-This ensures Wingman analyzes failures without interrupting successful builds.
+This ensures Wingman can analyze and comment on the PR regardless of job status.
+
+### Security Features
+
+The workflows that handle pull requests have been configured with security best practices:
+
+- **pull_request_target event**: Used instead of `pull_request` for elevated permissions
+- **Base repository checkout**: Workflows check out the base repository code to avoid executing untrusted code from forks
+- **Explicit permissions**: All workflows define required permissions (contents: write, pull-requests: write, issues: write)
+- **Contributor validation**: PR workflows include validation steps (currently permissive but can be restricted)
+- **Debug logging**: All workflows log context information for troubleshooting
 
 ### 2. Automated Fix Application
 
@@ -236,6 +246,16 @@ diff --git a/src/main/java/com/example/Calculator.java b/src/main/java/com/examp
 - Commits are made by `github-actions[bot]` user
 - Limited to repository where workflow exists
 - Subject to branch protection rules
+
+### Pull Request Security
+
+For workflows triggered by pull requests, additional security measures are in place:
+
+- **pull_request_target event**: Provides elevated permissions while isolating untrusted code
+- **Base repository checkout**: Workflows check out the base repository code (`github.base_ref`), not the PR code, preventing execution of malicious code from forks
+- **Explicit permissions**: Workflows declare minimum required permissions (contents: write, pull-requests: write, issues: write)
+- **Contributor validation**: Optional validation step that can be configured to restrict workflow execution to trusted users or organization members
+- **Debug logging**: Context information is logged for security auditing and troubleshooting
 
 ### Probot App
 

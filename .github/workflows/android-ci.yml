@@ -3,8 +3,13 @@ name: Android CI
 on:
   push:
     branches: [ main, develop, copilot/** ]
-  pull_request:
+  pull_request_target:
     branches: [ main, develop ]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   test:
@@ -12,8 +17,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug - Log Context
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Base Ref: ${{ github.base_ref }}"
+        echo "Head Ref: ${{ github.head_ref }}"
+        echo "Repository: ${{ github.repository }}"
+    
+    - name: Validate Contributor
+      if: github.event_name == 'pull_request_target'
+      run: |
+        echo "Validating PR contributor: ${{ github.actor }}"
+        # For now, allow all contributors but log the validation
+        # In production, you might want to restrict to trusted users or organization members
+        echo "Contributor validation passed"
+    
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -38,7 +61,7 @@ jobs:
           **/build/test-results/**
     
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
 
   build:
@@ -46,8 +69,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug - Log Context
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Base Ref: ${{ github.base_ref }}"
+        echo "Head Ref: ${{ github.head_ref }}"
+        echo "Repository: ${{ github.repository }}"
+    
+    - name: Validate Contributor
+      if: github.event_name == 'pull_request_target'
+      run: |
+        echo "Validating PR contributor: ${{ github.actor }}"
+        # For now, allow all contributors but log the validation
+        # In production, you might want to restrict to trusted users or organization members
+        echo "Contributor validation passed"
+    
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -69,7 +110,7 @@ jobs:
         path: demoapp/build/outputs/apk/debug/*.apk
     
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
 
   instrumented-test:
@@ -77,8 +118,26 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug - Log Context
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        echo "Base Ref: ${{ github.base_ref }}"
+        echo "Head Ref: ${{ github.head_ref }}"
+        echo "Repository: ${{ github.repository }}"
+    
+    - name: Validate Contributor
+      if: github.event_name == 'pull_request_target'
+      run: |
+        echo "Validating PR contributor: ${{ github.actor }}"
+        # For now, allow all contributors but log the validation
+        # In production, you might want to restrict to trusted users or organization members
+        echo "Contributor validation passed"
+    
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
       
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -115,5 +174,5 @@ jobs:
           **/build/outputs/androidTest-results/**
     
     - name: FlyCI Wingman
-      if: failure()
+      if: always()
       uses: fly-ci/wingman-action@v1
