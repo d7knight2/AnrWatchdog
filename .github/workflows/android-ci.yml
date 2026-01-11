@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# Workflow-level permissions for FlyCI Wingman integration
 permissions:
   contents: write
   pull-requests: write

@@ -8,6 +8,7 @@ on:
     branches: [ main, develop ]
     types: [opened, synchronize, reopened]
 
+# Workflow-level permissions for FlyCI Wingman integration
 permissions:
   contents: write
   pull-requests: write

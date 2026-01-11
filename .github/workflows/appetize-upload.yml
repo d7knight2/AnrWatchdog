@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allow manual triggering
 
+# Workflow-level permissions for FlyCI Wingman integration
 permissions:
   contents: write
   pull-requests: write
