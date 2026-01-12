@@ -110,6 +110,52 @@ ANRWatchdog.initialize(this)
 
 Contributions are welcome! If you have ideas for new features or improvements, feel free to open an issue or submit a pull request.
 
+### How to Contribute
+
+1. **Fork the repository** and create a new branch from `develop`
+2. **Make your changes** following the coding standards below
+3. **Write or update tests** to cover your changes
+4. **Run the test suite** to ensure everything passes
+5. **Update documentation** if you're changing APIs or adding features
+6. **Submit a pull request** with a clear description of your changes
+
+### Coding Standards
+
+- **Kotlin Style:** Follow [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html)
+- **Documentation:** Add KDoc comments for public APIs
+- **Testing:** Maintain or improve test coverage
+- **Commit Messages:** Use clear, descriptive commit messages
+- **Code Review:** All PRs require review before merging
+
+### Development Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/d7knight2/AnrWatchdog.git
+   cd AnrWatchdog
+   ```
+
+2. Build the project:
+   ```bash
+   ./gradlew build
+   ```
+
+3. Run tests:
+   ```bash
+   ./gradlew test                    # Unit tests
+   ./gradlew connectedAndroidTest    # Instrumented tests (requires emulator/device)
+   ```
+
+### Areas for Contribution
+
+We welcome contributions in these areas:
+- **Performance improvements** for ANR detection
+- **Additional test coverage** for edge cases
+- **Documentation improvements**
+- **Bug fixes** and issue resolution
+- **New features** (please discuss in an issue first)
+- **Code quality** improvements and refactoring
+
 ## Testing
 
 This project includes comprehensive test coverage:
