@@ -11,6 +11,6 @@ object FakeLogger {
      * @param message The message to log
      */
     fun log(message: String) {
-        println("[FakeLogger] \$message")
+        println("[FakeLogger] $message")
     }
 }
