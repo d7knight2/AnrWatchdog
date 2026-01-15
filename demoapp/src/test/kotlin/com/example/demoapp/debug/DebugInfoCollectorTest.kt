@@ -212,8 +212,10 @@ class DebugInfoCollectorTest {
         val interactions = DebugInfoCollector.getUiInteractions()
         assertEquals(10, interactions.size)
         
-        // Should keep most recent interactions
-        assertEquals(15f, interactions[9].x, 0.01f)
+        // UI interactions use FIFO trimming (removeAt(0)), so oldest entries (1-5) are removed
+        // Kept interactions are 6-15
+        assertEquals(6f, interactions[0].x, 0.01f)  // First kept interaction
+        assertEquals(15f, interactions[9].x, 0.01f) // Last interaction
     }
 
     @Test
