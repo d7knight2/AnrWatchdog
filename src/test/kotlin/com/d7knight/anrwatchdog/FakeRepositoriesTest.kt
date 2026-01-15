@@ -3,7 +3,7 @@ package com.d7knight.anrwatchdog
 import com.d7knight.anrwatchdog.blocking.BlockingRxJavaInteroptRepository
 import com.d7knight.anrwatchdog.experiment.ExperimentCheckRepository
 import com.d7knight.anrwatchdog.glide.FakeGlideRepository
-import com.d7knight.anrwatchdog.network.FakeOkHttpRepository
+import com.d7knight.anrwatchdog.okhttp.FakeOkHttpRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.junit.Test

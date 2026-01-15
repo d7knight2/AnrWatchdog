@@ -1,4 +1,4 @@
-package com.d7knight.anrwatchdog.experimental
+package com.d7knight.anrwatchdog.experiment
 
 import kotlinx.coroutines.*
 

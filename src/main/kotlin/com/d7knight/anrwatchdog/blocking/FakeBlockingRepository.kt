@@ -1,6 +1,6 @@
-import com.d7knight.anrwatchdog.network.FakeOkHttpRepository
-import com.d7knight.anrwatchdog.graphics.FakeGlideRepository
-import com.d7knight.anrwatchdog.experimental.ExperimentCheckRepository
+import com.d7knight.anrwatchdog.okhttp.FakeOkHttpRepository
+import com.d7knight.anrwatchdog.glide.FakeGlideRepository
+import com.d7knight.anrwatchdog.experiment.ExperimentCheckRepository
 
 /**
  * Example demonstrating concurrent execution of multiple simulated blocking operations.
