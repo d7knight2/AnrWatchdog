@@ -63,9 +63,15 @@ class DebugInfoCollectorTest {
         val blocks = DebugInfoCollector.getRecentMainThreadBlocks()
         assertEquals(5, blocks.size)
         
-        // Verify order (most recent first)
+        // Verify order (most recent first, as blocks are added at index 0)
         assertEquals("Stack trace 5", blocks[0].stackTrace)
         assertEquals("Stack trace 1", blocks[4].stackTrace)
+        
+        // Verify timestamps are in descending order (most recent first)
+        for (i in 0 until blocks.size - 1) {
+            assertTrue(blocks[i].timestamp >= blocks[i + 1].timestamp,
+                "Timestamps should be in descending order (most recent first)")
+        }
     }
 
     @Test
@@ -135,7 +141,9 @@ class DebugInfoCollectorTest {
         val history = DebugInfoCollector.getCpuUsageHistory()
         assertEquals(10, history.size)
         
-        // Should keep most recent snapshots (last 10)
+        // CPU history trims from the beginning (FIFO), so oldest entries are removed
+        // Most recent snapshots (6-15) should be kept
+        assertEquals(6f, history[0].cpuUsagePercent, 0.01f)
         assertEquals(15f, history[9].cpuUsagePercent, 0.01f)
     }
 
