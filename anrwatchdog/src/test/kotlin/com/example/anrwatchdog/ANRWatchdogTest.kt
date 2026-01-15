@@ -8,6 +8,8 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -101,22 +103,22 @@ class ANRWatchdogTest {
     @Test
     fun testCallbackInvocation() {
         val watchdog = ANRWatchdog.initialize(mockApplication)
-        var callbackCount = 0
+        val latch = CountDownLatch(1)
         var capturedThread: Thread? = null
         
         watchdog.setCallback { thread ->
-            callbackCount++
             capturedThread = thread
+            latch.countDown()
         }
         .setTimeout(100L) // Short timeout for faster test
         .start()
         
-        // Wait for callback to be invoked at least once
-        Thread.sleep(250)
+        // Wait for callback to be invoked with timeout
+        val invoked = latch.await(500, TimeUnit.MILLISECONDS)
         watchdog.stop()
         
         // Verify callback was invoked
-        assertTrue(callbackCount > 0, "Callback should be invoked at least once")
+        assertTrue(invoked, "Callback should be invoked within timeout")
         assertNotNull(capturedThread, "Captured thread should not be null")
     }
 
@@ -192,18 +194,19 @@ class ANRWatchdogTest {
     @Test
     fun testStartStopRestart() {
         val watchdog = ANRWatchdog.initialize(mockApplication)
+        val latch = CountDownLatch(1)
         
         // Start
         watchdog.start()
-        Thread.sleep(50)
+        latch.await(50, TimeUnit.MILLISECONDS)
         
         // Stop
         watchdog.stop()
-        Thread.sleep(50)
+        latch.await(50, TimeUnit.MILLISECONDS)
         
         // Restart
         watchdog.start()
-        Thread.sleep(50)
+        latch.await(50, TimeUnit.MILLISECONDS)
         
         // Stop again
         watchdog.stop()
@@ -212,8 +215,12 @@ class ANRWatchdogTest {
     @Test
     fun testCallbackNotSetDoesNotCrash() {
         val watchdog = ANRWatchdog.initialize(mockApplication)
+        val latch = CountDownLatch(1)
+        
         watchdog.setTimeout(100L).start()
-        Thread.sleep(250) // Wait for watchdog to run
+        
+        // Wait a bit and ensure watchdog doesn't crash
+        latch.await(250, TimeUnit.MILLISECONDS)
         watchdog.stop()
         // Should complete without throwing exception
     }
@@ -221,16 +228,20 @@ class ANRWatchdogTest {
     @Test
     fun testCallbackWithException() {
         val watchdog = ANRWatchdog.initialize(mockApplication)
+        val latch = CountDownLatch(1)
         
         watchdog.setCallback { 
+            latch.countDown()
             throw RuntimeException("Test exception in callback")
         }
         .setTimeout(100L)
         .start()
         
-        // Wait and ensure watchdog doesn't crash
-        Thread.sleep(250)
+        // Wait and ensure watchdog doesn't crash even if callback throws
+        val invoked = latch.await(500, TimeUnit.MILLISECONDS)
         watchdog.stop()
+        
+        assertTrue(invoked, "Callback should be invoked even if it throws")
         // Should complete even if callback throws
     }
 }
