@@ -14,6 +14,34 @@ import android.view.ViewGroup
 import com.example.demoapp.debug.DebugInfoCollector
 import com.example.demoapp.debug.FloatingDebugView
 
+/**
+ * Main activity for the ANR Watchdog demo application.
+ * 
+ * This activity demonstrates various features of the ANR detection system including:
+ * - Tab-based navigation with fragment switching
+ * - Floating debug view for real-time monitoring
+ * - UI interaction tracking (taps, scrolls, long presses)
+ * - Periodic debug information updates
+ * - Main thread block detection and logging
+ * 
+ * The activity uses a FrameLayout as the root to support the draggable floating debug overlay
+ * and includes a LinearLayout for the main content with tab buttons and fragment container.
+ * 
+ * ## UI Components:
+ * - Tab buttons for switching between different demo fragments
+ * - Fragment container for displaying current tab content
+ * - Floating debug view for real-time monitoring and diagnostics
+ * 
+ * ## Interaction Tracking:
+ * The activity overrides dispatchTouchEvent to capture and log all UI interactions:
+ * - TAP: Quick touch and release (< 500ms)
+ * - SCROLL: Movement beyond threshold (> 10px)
+ * - LONG_PRESS: Hold for extended duration (≥ 500ms)
+ * 
+ * @see FloatingDebugView
+ * @see DebugInfoCollector
+ * @see TabFragment
+ */
 class MainActivity : AppCompatActivity() {
     private val tabNames = listOf("Tab 1", "Tab 2", "Tab 3")
     private var currentTab = 0
@@ -21,6 +49,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var floatingDebugView: FloatingDebugView
     private lateinit var rootLayout: FrameLayout
     private val handler = Handler(Looper.getMainLooper())
+    
+    /** Runnable for periodic debug info updates */
     private val updateRunnable = object : Runnable {
         override fun run() {
             floatingDebugView.updateDebugInfo()
@@ -28,15 +58,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    // Touch tracking for interaction logging
     private var lastTouchTime = 0L
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private var lastScrollLogTime = 0L // Track last scroll log time to prevent flooding
     
     companion object {
+        /** Threshold for distinguishing taps from long presses */
         private const val TAP_DURATION_THRESHOLD_MS = 500L
+        
+        /** Minimum movement distance to consider as scroll */
         private const val SCROLL_MOVEMENT_THRESHOLD_PX = 10f
-        private const val SCROLL_LOG_INTERVAL_MS = 100L // Minimum time between scroll logs
+        
+        /** Minimum time between scroll logs to prevent flooding */
+        private const val SCROLL_LOG_INTERVAL_MS = 100L
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
