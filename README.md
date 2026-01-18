@@ -115,10 +115,12 @@ Contributions are welcome! If you have ideas for new features or improvements, f
 This project includes comprehensive test coverage:
 - **Unit tests** for the ANRWatchdog library
 - **Instrumented UI tests** for the demo app (ANR simulation, memory leaks, UI interactions)
+- **Code Coverage**: JaCoCo integration with 90% coverage target
 - **Continuous Integration** via GitHub Actions
 - **Branch Protection**: All PRs require passing tests before merge
 
 See [TESTING.md](TESTING.md) for detailed information on running tests and CI configuration.
+See [CODE_COVERAGE.md](CODE_COVERAGE.md) for code coverage setup and reporting.
 
 ## Branch Protection & PR Validation
 

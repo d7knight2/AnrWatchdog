@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     kotlin("android")
+    jacoco
 }
 
 android {
@@ -10,6 +11,19 @@ android {
     defaultConfig {
         minSdk = 21
         targetSdk = 34
+    }
+    
+    buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
+        }
+    }
+    
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
 
@@ -23,3 +37,19 @@ dependencies {
     testImplementation("org.mockito:mockito-inline:5.2.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
 }
+
+// JaCoCo configuration for Android library
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    
+    sourceDirectories.setFrom(files("${project.projectDir}/src/main/kotlin"))
+    classDirectories.setFrom(files("${project.buildDir}/tmp/kotlin-classes/debug"))
+    executionData.setFrom(files("${project.buildDir}/jacoco/testDebugUnitTest.exec"))
+}
+

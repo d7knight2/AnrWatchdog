@@ -52,6 +52,9 @@ jobs:
     - name: Run unit tests
       run: ./gradlew test --stacktrace
       
+    - name: Generate code coverage report
+      run: ./gradlew jacocoTestReport --stacktrace
+      
     - name: Upload test reports
       if: always()
       uses: actions/upload-artifact@v4
@@ -60,6 +63,15 @@ jobs:
         path: |
           **/build/reports/tests/**
           **/build/test-results/**
+          
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          **/build/reports/jacoco/**
+          **/build/jacoco/*.exec
     
     - name: FlyCI Wingman
       if: always()

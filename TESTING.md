@@ -148,12 +148,28 @@ The test suite covers:
 - ✅ Memory leak detection integration
 - ✅ Activity and fragment lifecycle
 - ✅ Floating debug view functionality
+- ✅ Repository pattern implementations
+- ✅ Coroutine debugging and tracing
+- ✅ RxJava interoperability
+- ✅ Exception handling and edge cases
 
 ### Test Types
 - ✅ Unit tests (pure Kotlin/Java logic)
 - ✅ Instrumented tests (Android UI and framework)
 - ✅ Integration tests (multiple components)
 - ✅ Lifecycle tests (activity/fragment creation and destruction)
+- ✅ Edge case tests (boundaries, concurrent access, error scenarios)
+
+### Coverage Statistics
+
+**Target**: 90% code coverage across all modules
+
+**Current Test Count**:
+- ANRWatchdog Library: 24 test cases (including 15 edge case tests)
+- Root Module: 36+ test cases covering all repositories and utilities
+- Demo App: 5 instrumented test classes
+
+For detailed coverage information, see [CODE_COVERAGE.md](CODE_COVERAGE.md).
 
 ## Test Dependencies
 
@@ -246,5 +262,10 @@ Potential areas for enhanced testing:
 - Stress testing with multiple concurrent ANR events
 - More comprehensive coroutine debugging tests
 - Automated screenshot testing
-- Code coverage reporting
 - Integration with code quality tools (ktlint, detekt)
+
+### Code Coverage Improvements
+- Multi-module coverage aggregation
+- Coverage badges in README
+- Coverage trends over time
+- Differential coverage for PRs
