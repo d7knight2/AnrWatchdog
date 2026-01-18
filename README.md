@@ -110,6 +110,8 @@ ANRWatchdog.initialize(this)
 
 Contributions are welcome! If you have ideas for new features or improvements, feel free to open an issue or submit a pull request.
 
+For detailed information on how to contribute, including development setup, coding guidelines, and the pull request process, please see our [CONTRIBUTING.md](CONTRIBUTING.md) guide.
+
 ## Testing
 
 This project includes comprehensive test coverage:
