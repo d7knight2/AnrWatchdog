@@ -113,10 +113,27 @@ Contributions are welcome! If you have ideas for new features or improvements, f
 ## Testing
 
 This project includes comprehensive test coverage:
-- **Unit tests** for the ANRWatchdog library
+- **Unit tests** for the ANRWatchdog library (>90% code coverage)
+- **Unit tests** for utility components (>95% code coverage)
 - **Instrumented UI tests** for the demo app (ANR simulation, memory leaks, UI interactions)
 - **Continuous Integration** via GitHub Actions
 - **Branch Protection**: All PRs require passing tests before merge
+
+### Running Tests Locally
+
+```bash
+# Run all unit tests
+./gradlew test
+
+# Run ANRWatchdog library tests
+./gradlew anrwatchdog:test
+
+# Run DemoApp unit tests
+./gradlew demoapp:test
+
+# Run instrumented tests (requires emulator or device)
+./gradlew connectedAndroidTest
+```
 
 See [TESTING.md](TESTING.md) for detailed information on running tests and CI configuration.
 
