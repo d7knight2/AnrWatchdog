@@ -1,4 +1,4 @@
-package com.example.demoapp
+package com.example.demoapp.leaks
 
 /**
  * Curated examples of memory leak patterns that are commonly seen in Android apps.
@@ -53,13 +53,4 @@ object LeakScenarioCatalog {
 
     fun allScenarios(): List<LeakScenario> = scenarios
 
-    fun toDisplayText(scenario: LeakScenario): String {
-        return buildString {
-            appendLine("📌 ${scenario.title}")
-            appendLine("Category: ${scenario.category}")
-            appendLine("Symptom: ${scenario.symptom}")
-            appendLine("Prevention: ${scenario.prevention}")
-            append("Quick check: ${scenario.quickCheck}")
-        }
-    }
 }

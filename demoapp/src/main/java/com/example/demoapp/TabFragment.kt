@@ -11,6 +11,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.demoapp.debug.DebugInfoCollector
+import com.example.demoapp.leaks.LeakScenarioCatalog
+import com.example.demoapp.leaks.LeakScenarioFormatter
 
 class TabFragment : Fragment() {
     private var animator: ObjectAnimator? = null
@@ -58,7 +60,7 @@ class TabFragment : Fragment() {
         layout.addView(leakSectionTitle)
 
         val leakDetailsView = TextView(requireContext()).apply {
-            text = LeakScenarioCatalog.toDisplayText(LeakScenarioCatalog.allScenarios().first())
+            text = LeakScenarioFormatter.toDisplayText(LeakScenarioCatalog.allScenarios().first())
             textSize = 13f
             setTextColor(Color.parseColor("#37474F"))
             setBackgroundColor(Color.parseColor("#ECEFF1"))
@@ -70,7 +72,7 @@ class TabFragment : Fragment() {
             val scenarioButton = Button(requireContext()).apply {
                 text = "Example ${index + 1}: ${scenario.title}"
                 setOnClickListener {
-                    leakDetailsView.text = LeakScenarioCatalog.toDisplayText(scenario)
+                    leakDetailsView.text = LeakScenarioFormatter.toDisplayText(scenario)
                     DebugInfoCollector.recordUiInteraction(
                         DebugInfoCollector.InteractionType.TAP,
                         0f,

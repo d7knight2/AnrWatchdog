@@ -1,4 +1,4 @@
-package com.example.demoapp
+package com.example.demoapp.leaks
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -23,7 +23,7 @@ class LeakScenarioCatalogTest {
     fun toDisplayText_includesAllCoreFields() {
         val scenario = LeakScenarioCatalog.allScenarios().first()
 
-        val text = LeakScenarioCatalog.toDisplayText(scenario)
+        val text = LeakScenarioFormatter.toDisplayText(scenario)
 
         assertTrue(text.contains(scenario.title))
         assertTrue(text.contains(scenario.category))
