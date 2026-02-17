@@ -18,19 +18,25 @@ For detailed instructions, see [DISTRIBUTION.md](../DISTRIBUTION.md).
 ## How to Build and Run
 
 1. Make sure you have a valid Android SDK and set up your `local.properties` file:
-   
+
    ```
    echo "sdk.dir=/path/to/your/android/sdk" > local.properties
    ```
 
 2. Build the demo app:
-   
+
    ```
    ./gradlew :demoapp:assembleDebug
    ```
 
-3. Install the demo app on a connected device or emulator:
-   
+3. Run local unit tests for leak examples:
+
+   ```
+   ./gradlew :demoapp:testDebugUnitTest
+   ```
+
+4. Install the demo app on a connected device or emulator:
+
    ```
    ./gradlew :demoapp:installDebug
    ```
@@ -39,8 +45,40 @@ For detailed instructions, see [DISTRIBUTION.md](../DISTRIBUTION.md).
 
 - Integrates [LeakCanary](https://square.github.io/leakcanary/) (latest alpha) for memory leak and growth detection.
 - Demonstrates tab switching in `MainActivity` with three tabs.
-- Each tab switch replaces a fragment (`TabFragment`) that runs an endless `ObjectAnimator`.
-- LeakCanary will detect leaks if fragments or animators are not properly cleaned up.
+- Adds an improved training UI in `TabFragment` with:
+  - ANR simulation button
+  - Rich memory leak scenario examples
+  - Interactive scenario buttons that show symptom/prevention/check guidance
+- Includes a reusable `LeakScenarioCatalog` with examples such as:
+  - Static Activity references
+  - Unregistered listeners
+  - Long-running coroutines that capture views
+  - Oversized bitmap caches
+  - Fragment ViewBinding lifecycle leaks
+
+## Package Structure
+
+- `com.example.demoapp`: Activity/Fragment UI and app wiring
+- `com.example.demoapp.leaks`: leak examples catalog and formatting
+- `com.example.demoapp.debug`: floating debug overlay and collectors
+
+## Documentation
+
+- [MEMORY_LEAK_EXAMPLES.md](./MEMORY_LEAK_EXAMPLES.md) for practical leak patterns and remediation.
+- [FLOATING_DEBUG_TOOL.md](./FLOATING_DEBUG_TOOL.md) for details on debug overlay functionality.
+- [FLOATING_DEBUG_TOOL_VISUAL_GUIDE.md](./FLOATING_DEBUG_TOOL_VISUAL_GUIDE.md) for UI details.
+
+## Testing Guide (Expected vs Actual)
+
+1. Local unit tests
+   - Command: `./gradlew :demoapp:testDebugUnitTest`
+   - Expected: `LeakScenarioCatalogTest` passes and reports green suite
+   - Actual in this environment: fails before test execution due to Android SDK/build-tools issue (`25.0.1`)
+
+2. Instrumented UI tests
+   - Command: `./gradlew :demoapp:connectedDebugAndroidTest`
+   - Expected: `LeakExamplesUiTest` validates section visibility and detail updates on example click
+   - Actual in this environment: not executed (no emulator/device available)
 
 ## Example Usage
 
