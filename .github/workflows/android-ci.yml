@@ -3,7 +3,7 @@ name: Android CI
 on:
   push:
     branches: [ main, develop, copilot/** ]
-  pull_request_target:
+  pull_request:
     branches: [ main, develop ]
 
 permissions:
@@ -26,19 +26,9 @@ jobs:
         echo "Head Ref: ${{ github.head_ref }}"
         echo "Repository: ${{ github.repository }}"
     
-    - name: Validate Contributor
-      if: github.event_name == 'pull_request_target'
-      run: |
-        echo "Validating PR contributor: ${{ github.actor }}"
-        # For now, allow all contributors but log the validation
-        # In production, you might want to restrict to trusted users or organization members
-        echo "Contributor validation passed"
     
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
-      
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -50,7 +40,7 @@ jobs:
       run: chmod +x gradlew
       
     - name: Run unit tests
-      run: ./gradlew test --stacktrace
+      run: ./gradlew :anrwatchdog:testDebugUnitTest --stacktrace
       
     - name: Upload test reports
       if: always()
@@ -78,19 +68,9 @@ jobs:
         echo "Head Ref: ${{ github.head_ref }}"
         echo "Repository: ${{ github.repository }}"
     
-    - name: Validate Contributor
-      if: github.event_name == 'pull_request_target'
-      run: |
-        echo "Validating PR contributor: ${{ github.actor }}"
-        # For now, allow all contributors but log the validation
-        # In production, you might want to restrict to trusted users or organization members
-        echo "Contributor validation passed"
     
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
-      
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -102,13 +82,14 @@ jobs:
       run: chmod +x gradlew
       
     - name: Build debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: ./gradlew :demoapp:assembleDebug --stacktrace
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: debug-apk
         path: demoapp/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
     
     - name: FlyCI Wingman
       if: always()
@@ -127,19 +108,9 @@ jobs:
         echo "Head Ref: ${{ github.head_ref }}"
         echo "Repository: ${{ github.repository }}"
     
-    - name: Validate Contributor
-      if: github.event_name == 'pull_request_target'
-      run: |
-        echo "Validating PR contributor: ${{ github.actor }}"
-        # For now, allow all contributors but log the validation
-        # In production, you might want to restrict to trusted users or organization members
-        echo "Contributor validation passed"
     
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event_name == 'pull_request_target' && github.base_ref || github.ref }}
-      
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -163,7 +134,7 @@ jobs:
         target: default
         arch: x86_64
         profile: Nexus 6
-        script: ./gradlew connectedAndroidTest --stacktrace
+        script: ./gradlew :demoapp:connectedDebugAndroidTest --stacktrace
         
     - name: Upload instrumented test reports
       if: always()

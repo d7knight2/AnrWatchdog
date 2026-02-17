@@ -2,7 +2,14 @@ plugins {
     id("com.android.application")
     kotlin("android")
     id("com.google.gms.google-services")
-    id("com.google.firebase.appdistribution")
+}
+
+
+val firebaseCredentialsPath = System.getenv("FIREBASE_SERVICE_CREDENTIALS")
+val hasFirebaseCredentials = !firebaseCredentialsPath.isNullOrBlank() && file(firebaseCredentialsPath).exists()
+
+if (hasFirebaseCredentials) {
+    apply(plugin = "com.google.firebase.appdistribution")
 }
 
 android {
@@ -20,10 +27,12 @@ android {
 }
 
 // Firebase App Distribution configuration
-configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
-    releaseNotesFile = file("release-notes.txt").path
-    groups = "testers"
-    serviceCredentialsFile = System.getenv("FIREBASE_SERVICE_CREDENTIALS") ?: ""
+if (hasFirebaseCredentials) {
+    configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
+        releaseNotesFile = file("release-notes.txt").path
+        groups = "testers"
+        serviceCredentialsFile = firebaseCredentialsPath
+    }
 }
 
 dependencies {
