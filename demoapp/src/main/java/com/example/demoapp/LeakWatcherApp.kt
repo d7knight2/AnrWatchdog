@@ -3,6 +3,7 @@ package com.example.demoapp
 import android.app.Application
 import android.util.Log
 import com.example.anrwatchdog.ANRWatchdog
+import com.example.demoapp.debug.DebugInfoCollector
 
 class LeakWatcherApp : Application() {
     override fun onCreate() {
@@ -12,8 +13,9 @@ class LeakWatcherApp : Application() {
         try {
             ANRWatchdog.initialize(this)
                 .setLogLevel(Log.DEBUG)
-                .setTimeout(5000)
+                .setTimeout(1000)
                 .setCallback { thread ->
+                    DebugInfoCollector.recordWatchdogEvent(thread.name, thread.id)
                     Log.w("LeakWatcherApp", "ANR detected on thread: ${thread.name}")
                 }
                 .start()
