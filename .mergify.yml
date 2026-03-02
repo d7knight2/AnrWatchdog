@@ -1,0 +1,11 @@
+pull_request_rules:
+  - name: automatic merge when Android CI passes
+    conditions:
+      - base=main
+      - -draft
+      - check-success=Run Tests
+      - check-success=Build APK
+      - check-success=Run Instrumented Tests
+    actions:
+      merge:
+        method: squash
