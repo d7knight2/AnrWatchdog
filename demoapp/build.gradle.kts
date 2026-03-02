@@ -2,7 +2,6 @@ plugins {
     id("com.android.application")
     kotlin("android")
     id("com.google.gms.google-services")
-    id("com.google.firebase.appdistribution")
 }
 
 android {
@@ -17,13 +16,6 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-}
-
-// Firebase App Distribution configuration
-configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
-    releaseNotesFile = file("release-notes.txt").path
-    groups = "testers"
-    serviceCredentialsFile = System.getenv("FIREBASE_SERVICE_CREDENTIALS") ?: ""
 }
 
 dependencies {

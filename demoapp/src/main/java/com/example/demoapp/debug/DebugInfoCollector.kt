@@ -23,6 +23,7 @@ object DebugInfoCollector {
     private val mainThreadBlocks = CopyOnWriteArrayList<MainThreadBlock>()
     private val cpuUsageHistory = CopyOnWriteArrayList<CpuUsageSnapshot>()
     private val uiInteractions = CopyOnWriteArrayList<UIInteraction>()
+    private val watchdogEvents = CopyOnWriteArrayList<WatchdogEvent>()
     
     // Configurable parameters
     var maxBlocks = 20
@@ -92,6 +93,15 @@ object DebugInfoCollector {
     enum class InteractionType {
         TAP, SCROLL, LONG_PRESS, DRAG
     }
+
+    /**
+     * Data class representing an ANR watchdog callback event
+     */
+    data class WatchdogEvent(
+        val timestamp: Long,
+        val threadName: String,
+        val threadId: Long
+    )
     
     /**
      * Records a main thread block event
@@ -209,6 +219,33 @@ object DebugInfoCollector {
     fun clearUiInteractions() {
         uiInteractions.clear()
     }
+
+    /**
+     * Records an ANR watchdog callback event
+     */
+    fun recordWatchdogEvent(threadName: String, threadId: Long) {
+        watchdogEvents.add(
+            WatchdogEvent(
+                timestamp = System.currentTimeMillis(),
+                threadName = threadName,
+                threadId = threadId
+            )
+        )
+    }
+
+    /**
+     * Gets ANR watchdog callback events
+     */
+    fun getWatchdogEvents(): List<WatchdogEvent> {
+        return watchdogEvents.toList()
+    }
+
+    /**
+     * Clears watchdog callback events
+     */
+    fun clearWatchdogEvents() {
+        watchdogEvents.clear()
+    }
     
     /**
      * Clears all debug logs
@@ -217,6 +254,7 @@ object DebugInfoCollector {
         clearMainThreadBlocks()
         clearCpuUsageHistory()
         clearUiInteractions()
+        clearWatchdogEvents()
     }
     
     /**
@@ -271,7 +309,8 @@ object DebugInfoCollector {
             "Available Processors" to runtime.availableProcessors().toString(),
             "Total Blocks Recorded" to mainThreadBlocks.size.toString(),
             "CPU Snapshots" to cpuUsageHistory.size.toString(),
-            "UI Interactions" to uiInteractions.size.toString()
+            "UI Interactions" to uiInteractions.size.toString(),
+            "Watchdog Events" to watchdogEvents.size.toString()
         )
     }
     
@@ -315,6 +354,13 @@ object DebugInfoCollector {
                 writer.write("=== Memory Usage History (${cpuUsageHistory.size}) ===\n")
                 cpuUsageHistory.forEach { snapshot ->
                     writer.write("${formatTimestamp(snapshot.timestamp)}: ${String.format("%.1f", snapshot.cpuUsagePercent)}% memory (${snapshot.totalThreads} threads)\n")
+                }
+                writer.write("\n")
+
+                // Watchdog events
+                writer.write("=== Watchdog Events (${watchdogEvents.size}) ===\n")
+                watchdogEvents.forEachIndexed { index, event ->
+                    writer.write("${index + 1}. ${formatTimestamp(event.timestamp)} - ${event.threadName} (#${event.threadId})\n")
                 }
                 writer.write("\n")
                 
