@@ -13,7 +13,7 @@ class LeakWatcherApp : Application() {
         try {
             ANRWatchdog.initialize(this)
                 .setLogLevel(Log.DEBUG)
-                .setTimeout(1000)
+                .setTimeout(5000)
                 .setCallback { thread ->
                     DebugInfoCollector.recordWatchdogEvent(thread.name, thread.id)
                     Log.w("LeakWatcherApp", "ANR detected on thread: ${thread.name}")

@@ -34,17 +34,16 @@ class WatchdogIntegrationUiTest {
 
     @Test
     fun watchdogCallback_isRecordedAfterAppStart() {
-        Thread.sleep(1300)
-
+        waitForWatchdogEvents(minimumCount = 1)
         assertTrue(DebugInfoCollector.getWatchdogEvents().isNotEmpty())
     }
 
     @Test
     fun watchdogEventCount_growsDuringIdle() {
-        Thread.sleep(1300)
+        waitForWatchdogEvents(minimumCount = 1)
         val firstCount = DebugInfoCollector.getWatchdogEvents().size
 
-        Thread.sleep(1300)
+        waitForWatchdogEvents(minimumCount = firstCount + 1)
         val secondCount = DebugInfoCollector.getWatchdogEvents().size
 
         assertTrue(secondCount > firstCount)
@@ -55,17 +54,29 @@ class WatchdogIntegrationUiTest {
         onView(withText("Simulate ANR (Block Main Thread)")).perform(click())
         Thread.sleep(2300)
 
+        waitForWatchdogEvents(minimumCount = 1)
         assertTrue(DebugInfoCollector.getRecentMainThreadBlocks().isNotEmpty())
         assertTrue(DebugInfoCollector.getWatchdogEvents().isNotEmpty())
     }
 
     @Test
     fun watchdogEvents_canBeClearedForNextTestRun() {
-        Thread.sleep(1300)
+        waitForWatchdogEvents(minimumCount = 1)
         assertTrue(DebugInfoCollector.getWatchdogEvents().isNotEmpty())
 
         DebugInfoCollector.clearWatchdogEvents()
 
         assertEquals(0, DebugInfoCollector.getWatchdogEvents().size)
+    }
+
+    private fun waitForWatchdogEvents(minimumCount: Int, timeoutMs: Long = 8000L) {
+        val start = System.currentTimeMillis()
+        while (System.currentTimeMillis() - start <= timeoutMs) {
+            if (DebugInfoCollector.getWatchdogEvents().size >= minimumCount) {
+                return
+            }
+            Thread.sleep(100)
+        }
+        throw AssertionError("Timed out waiting for at least $minimumCount watchdog events")
     }
 }
