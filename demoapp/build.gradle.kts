@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.withGroovyBuilder
+
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -25,15 +27,11 @@ android {
     }
 }
 
-// Firebase App Distribution configuration
 if (hasFirebaseCredentials) {
-    extensions.findByName("appDistribution")?.let { extension ->
-        extension.javaClass.getMethod("setReleaseNotesFile", String::class.java)
-            .invoke(extension, file("release-notes.txt").path)
-        extension.javaClass.getMethod("setGroups", String::class.java)
-            .invoke(extension, "testers")
-        extension.javaClass.getMethod("setServiceCredentialsFile", String::class.java)
-            .invoke(extension, firebaseCredentialsPath)
+    extensions.findByName("appDistribution")?.withGroovyBuilder {
+        setProperty("releaseNotesFile", file("release-notes.txt").path)
+        setProperty("groups", "testers")
+        setProperty("serviceCredentialsFile", firebaseCredentialsPath)
     }
 }
 
@@ -43,11 +41,9 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
 
-    // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
 
-    // Testing dependencies
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test:runner:1.5.2")

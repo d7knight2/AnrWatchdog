@@ -1,11 +1,12 @@
 buildscript {
     val firebaseCredentialsPath = System.getenv("FIREBASE_SERVICE_CREDENTIALS")
-    val hasFirebaseCredentials = !firebaseCredentialsPath.isNullOrBlank()
+    val hasFirebaseCredentials = !firebaseCredentialsPath.isNullOrBlank() && file(firebaseCredentialsPath).exists()
 
     repositories {
         google()
         mavenCentral()
     }
+
     dependencies {
         classpath("com.android.tools.build:gradle:8.2.2")
         classpath(kotlin("gradle-plugin", version = "1.9.0"))
