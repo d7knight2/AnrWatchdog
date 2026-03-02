@@ -79,6 +79,15 @@ class MainActivityTest {
             .check(matches(isEnabled()))
     }
 
+
+    @Test
+    fun testMemoryLeakExamplesUiDisplayed() {
+        onView(withText("Memory leak examples")).check(matches(isDisplayed()))
+        onView(withText("Example 1: Static Activity Reference")).check(matches(isDisplayed()))
+
+        onView(withText("Example 2: Unregistered Listener")).perform(click())
+        onView(withText(containsString("Category: Lifecycle Leak"))).check(matches(isDisplayed()))
+    }
     @Test
     fun testMultipleTabSwitches() {
         // Test switching between tabs multiple times
