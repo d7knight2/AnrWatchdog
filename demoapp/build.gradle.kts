@@ -4,7 +4,6 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-
 val firebaseCredentialsPath = System.getenv("FIREBASE_SERVICE_CREDENTIALS")
 val hasFirebaseCredentials = !firebaseCredentialsPath.isNullOrBlank() && file(firebaseCredentialsPath).exists()
 
@@ -28,10 +27,13 @@ android {
 
 // Firebase App Distribution configuration
 if (hasFirebaseCredentials) {
-    configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
-        releaseNotesFile = file("release-notes.txt").path
-        groups = "testers"
-        serviceCredentialsFile = firebaseCredentialsPath
+    extensions.findByName("appDistribution")?.let { extension ->
+        extension.javaClass.getMethod("setReleaseNotesFile", String::class.java)
+            .invoke(extension, file("release-notes.txt").path)
+        extension.javaClass.getMethod("setGroups", String::class.java)
+            .invoke(extension, "testers")
+        extension.javaClass.getMethod("setServiceCredentialsFile", String::class.java)
+            .invoke(extension, firebaseCredentialsPath)
     }
 }
 
@@ -40,11 +42,11 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
-    
+
     // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
-    
+
     // Testing dependencies
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
