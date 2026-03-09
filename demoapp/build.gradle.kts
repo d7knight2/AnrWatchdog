@@ -1,7 +1,16 @@
+import org.gradle.kotlin.dsl.withGroovyBuilder
+
 plugins {
     id("com.android.application")
     kotlin("android")
     id("com.google.gms.google-services")
+}
+
+val firebaseCredentialsPath = System.getenv("FIREBASE_SERVICE_CREDENTIALS")
+val hasFirebaseCredentials = !firebaseCredentialsPath.isNullOrBlank() && file(firebaseCredentialsPath).exists()
+
+if (hasFirebaseCredentials) {
+    apply(plugin = "com.google.firebase.appdistribution")
 }
 
 android {
@@ -18,13 +27,20 @@ android {
     }
 }
 
+if (hasFirebaseCredentials) {
+    extensions.findByName("appDistribution")?.withGroovyBuilder {
+        setProperty("releaseNotesFile", file("release-notes.txt").path)
+        setProperty("groups", "testers")
+        setProperty("serviceCredentialsFile", firebaseCredentialsPath)
+    }
+}
+
 dependencies {
     implementation(project(":anrwatchdog"))
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
-    
-    // Firebase dependencies
+
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     
