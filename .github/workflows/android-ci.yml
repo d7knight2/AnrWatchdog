@@ -7,16 +7,13 @@ on:
     branches: [ main, develop ]
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write
+  contents: read
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Debug - Log Context
       run: |
@@ -35,10 +32,10 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         cache: 'gradle'
-        
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
+
     - name: Run unit tests
       run: ./gradlew :anrwatchdog:testDebugUnitTest --stacktrace
       
@@ -50,15 +47,11 @@ jobs:
         path: |
           **/build/reports/tests/**
           **/build/test-results/**
-    
-    - name: FlyCI Wingman
-      if: always()
-      uses: fly-ci/wingman-action@v1
 
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Debug - Log Context
       run: |
@@ -77,10 +70,10 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         cache: 'gradle'
-        
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
+
     - name: Build debug APK
       run: ./gradlew :demoapp:assembleDebug --stacktrace
       
@@ -98,7 +91,7 @@ jobs:
   instrumented-test:
     name: Run Instrumented Tests
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Debug - Log Context
       run: |
@@ -117,16 +110,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         cache: 'gradle'
-        
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
+
     - name: Enable KVM group perms
       run: |
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
-        
+
     - name: Run instrumented tests
       uses: reactivecircus/android-emulator-runner@v2
       with:
@@ -144,7 +137,3 @@ jobs:
         path: |
           **/build/reports/androidTests/**
           **/build/outputs/androidTest-results/**
-    
-    - name: FlyCI Wingman
-      if: always()
-      uses: fly-ci/wingman-action@v1

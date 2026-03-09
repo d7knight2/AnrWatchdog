@@ -97,4 +97,44 @@ class ANRWatchdogTest {
         watchdog.start() // Should handle gracefully
         watchdog.stop()
     }
+
+
+    @Test
+    fun testCallbackInvokedWhenWatchdogRuns() {
+        val watchdog = ANRWatchdog.initialize(mockApplication)
+        var callbackCount = 0
+
+        watchdog
+            .setTimeout(50L)
+            .setCallback {
+                callbackCount++
+            }
+            .start()
+
+        Thread.sleep(130)
+        watchdog.stop()
+
+        assertTrue(callbackCount >= 1, "Expected callback to be invoked at least once")
+    }
+
+    @Test
+    fun testCallbackStopsAfterStopCalled() {
+        val watchdog = ANRWatchdog.initialize(mockApplication)
+        var callbackCount = 0
+
+        watchdog
+            .setTimeout(40L)
+            .setCallback {
+                callbackCount++
+            }
+            .start()
+
+        Thread.sleep(120)
+        watchdog.stop()
+        val countAfterStop = callbackCount
+        Thread.sleep(120)
+
+        assertTrue(callbackCount <= countAfterStop + 1, "Expected callback count to stop increasing after stop")
+    }
+
 }
