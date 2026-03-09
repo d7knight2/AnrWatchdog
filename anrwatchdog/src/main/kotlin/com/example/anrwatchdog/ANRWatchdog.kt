@@ -13,11 +13,20 @@ class ANRWatchdog private constructor(private val application: Application) {
 
     companion object {
         private var instance: ANRWatchdog? = null
+        private var debugProbesInitialized = false
+
         fun initialize(application: Application): ANRWatchdog {
             if (instance == null) {
                 instance = ANRWatchdog(application)
-                DebugProbes.install()
-                DebugProbes.enableCreationStackTraces = true
+                if (!debugProbesInitialized) {
+                    runCatching {
+                        DebugProbes.install()
+                        DebugProbes.enableCreationStackTraces = true
+                        debugProbesInitialized = true
+                    }.onFailure {
+                        Log.w("ANRWatchdog", "Debug probes are unavailable", it)
+                    }
+                }
             }
             return instance!!
         }
